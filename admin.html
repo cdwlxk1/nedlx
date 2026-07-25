@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="常用链接签到管理端" />
+    <title>管理端 · 常用链接签到</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page-shell admin-shell">
+      <header class="admin-header">
+        <div>
+          <p class="eyebrow">LINK CHECK-IN ADMIN</p>
+          <h1>链接签到管理端</h1>
+          <p class="hero-description">输入链接并发布到公共浏览端。</p>
+        </div>
+        <a class="back-link" href="index.html">打开公共浏览端 ↗</a>
+      </header>
+
+      <section class="batch-panel" aria-labelledby="admin-input-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">PUBLISH LINKS</p>
+            <h2 id="admin-input-title">批量发布链接</h2>
+          </div>
+          <span class="limit-badge">最多 6 个</span>
+        </div>
+        <p class="batch-description">支持英文分号、中文分号或换行分隔。</p>
+        <label class="sr-only" for="admin-link-input">批量输入链接</label>
+        <textarea id="admin-link-input" rows="6" placeholder="https://example.com/1;https://example.com/2"></textarea>
+        <div class="batch-actions">
+          <button id="publish-button" class="generate-button" type="button">发布到公共端</button>
+          <span id="publish-feedback" class="generator-feedback" role="status"></span>
+        </div>
+      </section>
+
+      <section class="summary-panel" aria-labelledby="admin-links-title">
+        <div class="list-heading">
+          <h2 id="admin-links-title">当前已发布链接</h2>
+          <span id="admin-link-count" class="link-count-text"></span>
+        </div>
+        <div id="admin-link-list" class="admin-link-list"></div>
+      </section>
+
+      <section class="summary-panel admin-records-panel" aria-labelledby="records-title">
+        <div class="list-heading">
+          <h2 id="records-title">本机签到记录</h2>
+          <span class="link-count-text">云端接入后将显示所有用户记录</span>
+        </div>
+        <div id="record-list" class="record-list"></div>
+      </section>
+
+      <footer class="page-footer">
+        <p><a href="index.html">返回公共浏览端</a></p>
+        <p>当前版本使用浏览器本地存储。跨设备同步需要接入云数据库。</p>
+      </footer>
+    </main>
+    <script src="admin.js"></script>
+  </body>
+</html>

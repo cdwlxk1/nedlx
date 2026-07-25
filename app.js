@@ -18,20 +18,17 @@
 
   const MAX_LINKS = 6;
   const RECORDS_STORAGE_KEY = "link-checkin-records-v1";
-  const LINKS_STORAGE_KEY = "link-checkin-links-v1";
+  const LINKS_STORAGE_KEY = "link-checkin-published-links-v1";
   const NAME_STORAGE_KEY = "link-checkin-visitor-name-v1";
   const state = loadRecords();
   let links = loadLinks();
   let visitorName = loadVisitorName();
   const list = document.querySelector("#link-list");
   const template = document.querySelector("#link-card-template");
-  const linkInput = document.querySelector("#link-input");
-  const generatorFeedback = document.querySelector("#generator-feedback");
   const visitorNameInput = document.querySelector("#visitor-name");
   const saveNameButton = document.querySelector("#save-name-button");
   const nameFeedback = document.querySelector("#name-feedback");
 
-  linkInput.value = links.map((link) => link.url).join(";\n");
   refreshNameForm();
   renderLinks();
 
@@ -55,25 +52,6 @@
     saveVisitorName();
     refreshNameForm();
     setNameFeedback(`已保存姓名：${visitorName}。每个链接签到时都会使用这个姓名。`, "success");
-  });
-
-  document.querySelector("#generate-button").addEventListener("click", () => {
-    const result = parseLinks(linkInput.value);
-
-    if (result.urls.length === 0) {
-      setGeneratorFeedback(generatorFeedback, "没有识别到有效的 http 或 https 链接。", "error");
-      return;
-    }
-
-    const limitedUrls = result.urls.slice(0, MAX_LINKS);
-    links = limitedUrls.map((url, index) => createLink(url, index));
-    saveLinks();
-    removeRecordsForMissingLinks();
-    renderLinks();
-
-    const extraMessage = result.urls.length > MAX_LINKS ? `，已取前 ${MAX_LINKS} 个` : "";
-    const invalidMessage = result.invalidCount ? `，忽略 ${result.invalidCount} 个无效内容` : "";
-    setGeneratorFeedback(generatorFeedback, `已生成 ${links.length} 个链接窗口${extraMessage}${invalidMessage}。`, "success");
   });
 
   document.querySelector("#clear-button").addEventListener("click", () => {
@@ -137,7 +115,7 @@
 
   function loadLinks() {
     try {
-      const saved = window.localStorage.getItem(LINKS_STORAGE_KEY);
+      const saved = window.localStorage.getItem(LINKS_STORAGE_KEY) || window.localStorage.getItem("link-checkin-links-v1");
       const parsed = saved ? JSON.parse(saved) : null;
       const validLinks = sanitizeLinks(parsed);
       return validLinks.length ? validLinks : [...DEFAULT_LINKS];

@@ -23,23 +23,6 @@
         </div>
       </section>
 
-      <section class="batch-panel" aria-labelledby="batch-title">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">QUICK GENERATE</p>
-            <h2 id="batch-title">批量生成链接窗口</h2>
-          </div>
-          <span class="limit-badge">最多 6 个</span>
-        </div>
-        <p class="batch-description">支持英文分号、中文分号或换行分隔。例如：<code>链接1;链接2;链接3</code></p>
-        <label class="sr-only" for="link-input">批量粘贴链接</label>
-        <textarea id="link-input" rows="4" placeholder="请把链接粘贴到这里，用分号隔开"></textarea>
-        <div class="batch-actions">
-          <button id="generate-button" class="generate-button" type="button">生成链接</button>
-          <span id="generator-feedback" class="generator-feedback" role="status"></span>
-        </div>
-      </section>
-
       <section class="summary-panel" aria-label="签到进度">
         <div class="summary-main">
           <span class="summary-label">当前进度</span>
@@ -77,8 +60,8 @@
       </section>
 
       <footer class="page-footer">
-        <p>提示：签到记录只保存在当前浏览器，不会自动同步给其他人。</p>
-        <p>如需所有人共享同一份实时名单，需要再接入在线数据库或表单服务。</p>
+        <p>管理员可以在 <a href="admin.html">管理端</a> 发布链接。</p>
+        <p>当前网页为本地预览版，跨设备同步签到记录还需要接入云数据库。</p>
       </footer>
     </main>
 
