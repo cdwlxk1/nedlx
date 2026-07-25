@@ -61,6 +61,19 @@ h1 { margin-bottom: 14px; font-size: clamp(32px, 5vw, 54px); line-height: 1.12; 
 .progress-bar { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--teal), #44b39b); transition: width 240ms ease; }
 .text-button { padding: 0; border: 0; color: var(--teal-dark); background: transparent; cursor: pointer; font-size: 13px; }
 .text-button:hover { text-decoration: underline; }
+.identity-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 0.9fr); gap: 10px 24px; align-items: end; margin-top: 18px; padding: 22px 25px 20px; border: 1px solid #f1dfbc; border-radius: 20px; background: #fffaf0; }
+.identity-panel .eyebrow { margin-bottom: 8px; color: #a46b22; }
+.identity-panel h2 { margin-bottom: 5px; font-size: 20px; line-height: 1.4; }
+.identity-description { margin-bottom: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.identity-form { display: flex; gap: 9px; min-width: 0; }
+.visitor-name-input { min-width: 0; flex: 1; min-height: 46px; padding: 0 14px; border: 1px solid #ead8b4; border-radius: 12px; color: var(--ink); outline: none; background: #fffdf8; }
+.visitor-name-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(214, 149, 59, 0.13); }
+.visitor-name-input:disabled { color: var(--muted); background: #f7f1e6; }
+.save-name-button { flex: 0 0 auto; min-height: 46px; padding: 0 16px; border: 1px solid #d6a45d; border-radius: 12px; color: #835418; background: white; cursor: pointer; font-size: 14px; font-weight: 700; }
+.save-name-button:hover { background: #fff3dc; }
+.name-feedback { grid-column: 1 / -1; min-height: 20px; margin: 0; color: var(--muted); font-size: 13px; }
+.name-feedback.success { color: #26745e; }
+.name-feedback.error { color: var(--danger); }
 .links-section { margin-top: 25px; }
 .link-count-text { padding-top: 5px; color: var(--muted); font-size: 13px; }
 .link-list { display: grid; gap: 18px; margin-top: 24px; }
@@ -80,9 +93,6 @@ h1 { margin-bottom: 14px; font-size: clamp(32px, 5vw, 54px); line-height: 1.12; 
 .open-link-button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 10px; padding: 0 18px; color: white; background: var(--teal); font-size: 14px; font-weight: 700; text-decoration: none; transition: background 160ms ease, transform 160ms ease; }
 .open-link-button:hover { background: var(--teal-dark); transform: translateY(-1px); }
 .arrow { font-size: 17px; line-height: 1; }
-.checkin-form { display: flex; flex: 1; gap: 9px; }
-.name-input { min-width: 0; flex: 1; padding: 0 14px; border: 1px solid var(--line); color: var(--ink); outline: none; background: #fbfdfc; }
-.name-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(8, 127, 120, 0.11); }
 .confirm-button { flex: 0 0 auto; padding: 0 17px; border: 1px solid #b9d9d4; color: var(--teal-dark); background: white; cursor: pointer; font-size: 14px; font-weight: 700; transition: background 160ms ease, border-color 160ms ease; }
 .confirm-button:hover { border-color: var(--teal); background: var(--teal-soft); }
 .feedback { min-height: 20px; margin: 12px 0 0; color: var(--muted); font-size: 13px; }
@@ -98,16 +108,16 @@ h1 { margin-bottom: 14px; font-size: clamp(32px, 5vw, 54px); line-height: 1.12; 
   h1 { font-size: clamp(31px, 9vw, 43px); }
   .hero-description { font-size: 14px; line-height: 1.7; }
   .batch-panel, .summary-panel, .link-card { padding: 20px; border-radius: 18px; }
+  .identity-panel { grid-template-columns: 1fr; padding: 20px; border-radius: 18px; }
+  .identity-form { width: 100%; }
   .batch-actions { align-items: flex-start; flex-direction: column; gap: 8px; }
   .generate-button { width: 100%; }
   .card-actions { display: grid; gap: 10px; }
   .open-link-button { width: 100%; min-height: 44px; }
-  .checkin-form { width: 100%; min-width: 0; }
   .confirm-button { padding: 0 14px; }
 }
 @media (max-width: 390px) {
   .section-heading, .list-heading { gap: 10px; }
   .section-heading h2, .list-heading h2 { font-size: 18px; }
   .summary-meta { align-items: flex-start; flex-direction: column; gap: 6px; }
-  .checkin-form { display: grid; grid-template-columns: 1fr auto; }
 }

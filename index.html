@@ -54,6 +54,20 @@
         </div>
       </section>
 
+      <section class="identity-panel" aria-labelledby="identity-title">
+        <div>
+          <p class="eyebrow">CHECK-IN NAME</p>
+          <h2 id="identity-title">先填写一次姓名</h2>
+          <p class="identity-description">后面的所有链接都会使用这个姓名签到。</p>
+        </div>
+        <div class="identity-form">
+          <label class="sr-only" for="visitor-name">你的姓名</label>
+          <input id="visitor-name" class="visitor-name-input" type="text" maxlength="20" placeholder="请输入你的姓名" autocomplete="name" />
+          <button id="save-name-button" class="save-name-button" type="button">保存姓名</button>
+        </div>
+        <p id="name-feedback" class="name-feedback" role="status"></p>
+      </section>
+
       <section class="links-section" aria-labelledby="links-title">
         <div class="list-heading">
           <h2 id="links-title">链接窗口</h2>
@@ -82,11 +96,7 @@
             <span class="open-link-label">打开链接</span>
             <span class="arrow" aria-hidden="true">↗</span>
           </a>
-          <div class="checkin-form">
-            <label class="sr-only" for="name-input">填写姓名</label>
-            <input class="name-input" type="text" maxlength="20" placeholder="查看后填写姓名" autocomplete="name" />
-            <button class="confirm-button" type="button">确定签到</button>
-          </div>
+          <button class="confirm-button" type="button">确定签到</button>
         </div>
         <p class="feedback" role="status"></p>
       </article>

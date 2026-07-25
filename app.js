@@ -19,15 +19,43 @@
   const MAX_LINKS = 6;
   const RECORDS_STORAGE_KEY = "link-checkin-records-v1";
   const LINKS_STORAGE_KEY = "link-checkin-links-v1";
+  const NAME_STORAGE_KEY = "link-checkin-visitor-name-v1";
   const state = loadRecords();
   let links = loadLinks();
+  let visitorName = loadVisitorName();
   const list = document.querySelector("#link-list");
   const template = document.querySelector("#link-card-template");
   const linkInput = document.querySelector("#link-input");
   const generatorFeedback = document.querySelector("#generator-feedback");
+  const visitorNameInput = document.querySelector("#visitor-name");
+  const saveNameButton = document.querySelector("#save-name-button");
+  const nameFeedback = document.querySelector("#name-feedback");
 
   linkInput.value = links.map((link) => link.url).join(";\n");
+  refreshNameForm();
   renderLinks();
+
+  saveNameButton.addEventListener("click", () => {
+    if (visitorNameInput.disabled) {
+      visitorNameInput.disabled = false;
+      saveNameButton.textContent = "保存姓名";
+      setNameFeedback("可以修改姓名，保存后会用于后续签到。", "");
+      visitorNameInput.focus();
+      return;
+    }
+
+    const name = visitorNameInput.value.trim();
+    if (!name) {
+      setNameFeedback("请先填写姓名。", "error");
+      visitorNameInput.focus();
+      return;
+    }
+
+    visitorName = name;
+    saveVisitorName();
+    refreshNameForm();
+    setNameFeedback(`已保存姓名：${visitorName}。每个链接签到时都会使用这个姓名。`, "success");
+  });
 
   document.querySelector("#generate-button").addEventListener("click", () => {
     const result = parseLinks(linkInput.value);
@@ -53,6 +81,9 @@
     if (!window.confirm("确定要清除这台设备上的所有查看和签到记录吗？")) return;
     Object.keys(state).forEach((key) => delete state[key]);
     saveRecords();
+    visitorName = "";
+    saveVisitorName();
+    refreshNameForm();
     links.forEach((link) => refreshCard(link.id));
     updateSummary();
   });
@@ -73,6 +104,35 @@
     } catch (error) {
       // 浏览器禁用本地存储时，页面仍可完成本次交互。
     }
+  }
+
+  function loadVisitorName() {
+    try {
+      const saved = window.localStorage.getItem(NAME_STORAGE_KEY);
+      return typeof saved === "string" ? saved.trim().slice(0, 20) : "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function saveVisitorName() {
+    try {
+      if (visitorName) window.localStorage.setItem(NAME_STORAGE_KEY, visitorName);
+      else window.localStorage.removeItem(NAME_STORAGE_KEY);
+    } catch (error) {
+      // 浏览器禁用本地存储时，当前页面仍可完成本次交互。
+    }
+  }
+
+  function refreshNameForm() {
+    visitorNameInput.value = visitorName;
+    visitorNameInput.disabled = Boolean(visitorName);
+    saveNameButton.textContent = visitorName ? "修改姓名" : "保存姓名";
+  }
+
+  function setNameFeedback(message, type) {
+    nameFeedback.textContent = message;
+    nameFeedback.className = `name-feedback${type ? ` ${type}` : ""}`;
   }
 
   function loadLinks() {
@@ -181,13 +241,9 @@
     const fragment = template.content.cloneNode(true);
     const card = fragment.querySelector(".link-card");
     const openButton = fragment.querySelector(".open-link-button");
-    const input = fragment.querySelector(".name-input");
     const confirmButton = fragment.querySelector(".confirm-button");
-    const inputId = `name-input-${link.id}`;
 
     card.dataset.linkId = link.id;
-    input.id = inputId;
-    fragment.querySelector(".sr-only").htmlFor = inputId;
     fragment.querySelector(".card-index").textContent = String(index + 1).padStart(2, "0");
     fragment.querySelector(".card-title").textContent = link.title;
     fragment.querySelector(".card-description").textContent = link.description;
@@ -204,7 +260,6 @@
     });
 
     confirmButton.addEventListener("click", () => {
-      const name = input.value.trim();
       const record = getRecord(link.id);
       const feedback = card.querySelector(".feedback");
 
@@ -212,20 +267,16 @@
         setFeedback(feedback, "请先点击“打开链接”查看内容，再进行签到。", "error");
         return;
       }
-      if (!name) {
-        input.focus();
-        setFeedback(feedback, "请填写姓名后再确定签到。", "error");
+      if (!visitorName) {
+        setFeedback(feedback, "请先在页面上方填写姓名。", "error");
+        visitorNameInput.focus();
         return;
       }
 
-      state[link.id] = { ...record, name, signedAt: new Date().toISOString() };
+      state[link.id] = { ...record, name: visitorName, signedAt: new Date().toISOString() };
       saveRecords();
       refreshCard(link.id);
       updateSummary();
-    });
-
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") confirmButton.click();
     });
 
     list.appendChild(fragment);
@@ -243,7 +294,6 @@
 
     const record = getRecord(id);
     const status = card.querySelector(".card-status");
-    const input = card.querySelector(".name-input");
     const feedback = card.querySelector(".feedback");
 
     card.classList.toggle("is-viewed", Boolean(record.viewed));
@@ -251,8 +301,6 @@
 
     if (record.name) {
       status.textContent = "已签到";
-      input.value = record.name;
-      input.disabled = true;
       card.querySelector(".confirm-button").textContent = "已确定";
       setFeedback(feedback, `已记录：${record.name}`, "success");
     } else if (record.viewed) {
