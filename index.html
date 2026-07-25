@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="常用链接查看与签到页面" />
+    <title>常用链接 · 查看后签到</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow">LINK CHECK-IN</p>
+          <h1 id="page-title">常用链接，打开就能签到</h1>
+          <p class="hero-description">
+            把多个链接用分号隔开粘贴进来，自动生成最多 6 个链接窗口。查看内容后，再填写姓名并确认签到。
+          </p>
+        </div>
+        <div class="hero-mark" aria-hidden="true">
+          <span class="hero-mark-dot"></span>
+          <span class="hero-mark-line"></span>
+        </div>
+      </section>
+
+      <section class="batch-panel" aria-labelledby="batch-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">QUICK GENERATE</p>
+            <h2 id="batch-title">批量生成链接窗口</h2>
+          </div>
+          <span class="limit-badge">最多 6 个</span>
+        </div>
+        <p class="batch-description">支持英文分号、中文分号或换行分隔。例如：<code>链接1;链接2;链接3</code></p>
+        <label class="sr-only" for="link-input">批量粘贴链接</label>
+        <textarea id="link-input" rows="4" placeholder="请把链接粘贴到这里，用分号隔开"></textarea>
+        <div class="batch-actions">
+          <button id="generate-button" class="generate-button" type="button">生成链接</button>
+          <span id="generator-feedback" class="generator-feedback" role="status"></span>
+        </div>
+      </section>
+
+      <section class="summary-panel" aria-label="签到进度">
+        <div class="summary-main">
+          <span class="summary-label">当前进度</span>
+          <strong id="progress-text">0 / 2 已签到</strong>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <span id="progress-bar" class="progress-bar"></span>
+        </div>
+        <div class="summary-meta">
+          <span id="viewed-text">已打开 0 个链接</span>
+          <button id="clear-button" class="text-button" type="button">清除本机记录</button>
+        </div>
+      </section>
+
+      <section class="links-section" aria-labelledby="links-title">
+        <div class="list-heading">
+          <h2 id="links-title">链接窗口</h2>
+          <span id="link-count-text" class="link-count-text"></span>
+        </div>
+        <div id="link-list" class="link-list" aria-live="polite"></div>
+      </section>
+
+      <footer class="page-footer">
+        <p>提示：签到记录只保存在当前浏览器，不会自动同步给其他人。</p>
+        <p>如需所有人共享同一份实时名单，需要再接入在线数据库或表单服务。</p>
+      </footer>
+    </main>
+
+    <template id="link-card-template">
+      <article class="link-card">
+        <div class="card-topline">
+          <span class="card-index"></span>
+          <span class="card-status"></span>
+        </div>
+        <h2 class="card-title"></h2>
+        <p class="card-description"></p>
+        <div class="url-preview"></div>
+        <div class="card-actions">
+          <a class="open-link-button" target="_blank" rel="noopener noreferrer">
+            <span class="open-link-label">打开链接</span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+          <div class="checkin-form">
+            <label class="sr-only" for="name-input">填写姓名</label>
+            <input class="name-input" type="text" maxlength="20" placeholder="查看后填写姓名" autocomplete="name" />
+            <button class="confirm-button" type="button">确定签到</button>
+          </div>
+        </div>
+        <p class="feedback" role="status"></p>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
