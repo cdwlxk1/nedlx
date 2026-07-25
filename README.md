@@ -20,4 +20,35 @@
 
 ## 重要边界
 
-当前版本的管理端和公共端使用浏览器本地存储，因此管理员发布的链接和签到记录只能在同一浏览器中共享；不同设备之间不会自动同步。若要把所有用户的姓名和签到记录汇总到管理员端，还需要接入在线数据库、云函数或网页 API。
+## 旧版 CloudBase 接口（当前网页不再使用）
+
+网页代码已经预留 CloudBase HTTP 云函数接口。要让不同用户的签到记录进入管理员端，请按下面顺序配置：
+
+1. 在云开发数据库中创建 `link_configs`、`link_events` 和 `checkins` 三个集合。
+2. 将本项目更新后的 `cloudfunctions/trackEvent` 上传并部署，并为它开启 HTTP 访问/HTTP 触发器。
+3. 在该云函数的环境变量中配置：
+   - `ADMIN_PASSWORD`：管理员端使用的密码；
+   - `ALLOWED_ORIGIN`：`https://cdwlx1.github.io`。
+4. 复制云函数的 HTTP 访问地址，填写到 `link-checkin/cloud-config.js` 的 `apiUrl`：
+
+```js
+window.LINK_HUB_CONFIG = Object.freeze({
+  envId: "nedlx-d9gnei91y81b6e12b",
+  apiUrl: "粘贴云函数 HTTP 访问地址"
+});
+```
+
+5. 在 CloudBase 的安全来源/安全域名中加入 `https://cdwlx1.github.io`。
+6. 把 `link-checkin` 目录中的 `cloud-config.js`、`index.html`、`app.js`、`admin.html`、`admin.js`、`styles.css` 上传到 GitHub 仓库根目录。
+
+部署后，公共端是 `https://cdwlx1.github.io/nedlx/`，管理端是 `https://cdwlx1.github.io/nedlx/admin.html`。管理端输入 `ADMIN_PASSWORD` 后，可以发布链接并查看云端签到记录。
+
+当前网页端用浏览器生成的 `visitorId` 识别一次访问设备，姓名来自用户填写，不等同于微信实名认证身份。如需网页端微信登录，还需要另外配置网页授权。
+
+CloudBase 网页调用需要配置安全来源；相关说明见[网页 SDK 初始化](https://docs.cloudbase.net/en/authentication-v2/method/sdk-init)和[HTTP 云函数调用](https://docs.cloudbase.net/en/cloud-function/function-calls/)。
+
+## 当前推荐：飞书版
+
+网页端现在已经预留飞书 Worker 接口。请阅读 [FEISHU_SETUP.md](FEISHU_SETUP.md)，创建飞书应用和多维表格后，将 `feishu-worker.js` 部署到 Worker，并在 `cloud-config.js` 中填写 Worker 地址。
+
+飞书 App Secret 只能配置在 Worker 的服务端环境变量中，不能上传到 GitHub。部署完成后，管理员页面发布的链接和用户签到记录会保存到飞书多维表格。

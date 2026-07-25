@@ -17,9 +17,12 @@
   ];
 
   const MAX_LINKS = 6;
+  const CONFIG = window.LINK_HUB_CONFIG || {};
+  const API_URL = typeof CONFIG.apiUrl === "string" ? CONFIG.apiUrl.trim() : "";
   const RECORDS_STORAGE_KEY = "link-checkin-records-v1";
   const LINKS_STORAGE_KEY = "link-checkin-published-links-v1";
   const NAME_STORAGE_KEY = "link-checkin-visitor-name-v1";
+  const VISITOR_ID_KEY = "link-checkin-visitor-id-v1";
   const state = loadRecords();
   let links = loadLinks();
   let visitorName = loadVisitorName();
@@ -31,6 +34,7 @@
 
   refreshNameForm();
   renderLinks();
+  if (API_URL) syncLinksFromCloud();
 
   saveNameButton.addEventListener("click", () => {
     if (visitorNameInput.disabled) {
@@ -55,7 +59,6 @@
   });
 
   document.querySelector("#clear-button").addEventListener("click", () => {
-    if (Object.keys(state).length === 0) return;
     if (!window.confirm("确定要清除这台设备上的所有查看和签到记录吗？")) return;
     Object.keys(state).forEach((key) => delete state[key]);
     saveRecords();
@@ -65,6 +68,29 @@
     links.forEach((link) => refreshCard(link.id));
     updateSummary();
   });
+
+  async function syncLinksFromCloud() {
+    try {
+      const response = await callApi({ action: "getLinks" });
+      if (Array.isArray(response.links) && response.links.length) {
+        links = sanitizeLinks(response.links);
+        removeRecordsForMissingLinks();
+        renderLinks();
+      }
+    } catch (error) {
+      setNameFeedback("云端链接加载失败，当前显示本机缓存。", "error");
+    }
+  }
+
+  async function callApi(payload) {
+    if (!API_URL) return { local: true };
+    const response = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const text = await response.text();
+    let result = {};
+    try { result = text ? JSON.parse(text) : {}; } catch (error) { throw new Error("云端返回格式错误"); }
+    if (!response.ok || result.ok === false) throw new Error(result.error || `云端请求失败（${response.status}）`);
+    return result;
+  }
 
   function loadRecords() {
     try {
@@ -99,6 +125,19 @@
       else window.localStorage.removeItem(NAME_STORAGE_KEY);
     } catch (error) {
       // 浏览器禁用本地存储时，当前页面仍可完成本次交互。
+    }
+  }
+
+  function getVisitorId() {
+    try {
+      let id = window.localStorage.getItem(VISITOR_ID_KEY);
+      if (!id) {
+        id = window.crypto && typeof window.crypto.randomUUID === "function" ? window.crypto.randomUUID() : `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        window.localStorage.setItem(VISITOR_ID_KEY, id);
+      }
+      return id;
+    } catch (error) {
+      return `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     }
   }
 
@@ -235,9 +274,10 @@
       saveRecords();
       refreshCard(link.id);
       updateSummary();
+      if (API_URL) callApi({ action: "open", visitorId: getVisitorId(), name: visitorName, linkId: link.id, linkTitle: link.title, linkUrl: link.url }).catch(() => {});
     });
 
-    confirmButton.addEventListener("click", () => {
+    confirmButton.addEventListener("click", async () => {
       const record = getRecord(link.id);
       const feedback = card.querySelector(".feedback");
 
@@ -251,10 +291,21 @@
         return;
       }
 
-      state[link.id] = { ...record, name: visitorName, signedAt: new Date().toISOString() };
-      saveRecords();
-      refreshCard(link.id);
-      updateSummary();
+      confirmButton.disabled = true;
+      try {
+        if (API_URL) {
+          const response = await callApi({ action: "checkin", visitorId: getVisitorId(), name: visitorName, linkId: link.id, linkTitle: link.title, linkUrl: link.url });
+          if (response.status !== "checked-in") throw new Error("云端没有确认签到");
+        }
+        state[link.id] = { ...record, name: visitorName, signedAt: new Date().toISOString() };
+        saveRecords();
+        refreshCard(link.id);
+        updateSummary();
+      } catch (error) {
+        setFeedback(feedback, `签到失败：${error.message}`, "error");
+      } finally {
+        confirmButton.disabled = false;
+      }
     });
 
     list.appendChild(fragment);
@@ -283,12 +334,10 @@
       setFeedback(feedback, `已记录：${record.name}`, "success");
     } else if (record.viewed) {
       status.textContent = "待签到";
-      input.disabled = false;
       card.querySelector(".confirm-button").textContent = "确定签到";
       setFeedback(feedback, "已打开链接，请填写姓名完成签到。", "");
     } else {
       status.textContent = "未查看";
-      input.disabled = false;
       card.querySelector(".confirm-button").textContent = "确定签到";
       setFeedback(feedback, "", "");
     }

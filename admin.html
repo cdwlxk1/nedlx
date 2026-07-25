@@ -29,6 +29,8 @@
         <p class="batch-description">支持英文分号、中文分号或换行分隔。</p>
         <label class="sr-only" for="admin-link-input">批量输入链接</label>
         <textarea id="admin-link-input" rows="6" placeholder="https://example.com/1;https://example.com/2"></textarea>
+        <label class="sr-only" for="admin-password">管理员密码</label>
+        <input id="admin-password" class="admin-password-input" type="password" maxlength="100" placeholder="请输入管理员密码" autocomplete="current-password" />
         <div class="batch-actions">
           <button id="publish-button" class="generate-button" type="button">发布到公共端</button>
           <span id="publish-feedback" class="generator-feedback" role="status"></span>
@@ -46,7 +48,7 @@
       <section class="summary-panel admin-records-panel" aria-labelledby="records-title">
         <div class="list-heading">
           <h2 id="records-title">本机签到记录</h2>
-          <span class="link-count-text">云端接入后将显示所有用户记录</span>
+          <button id="refresh-records-button" class="text-button" type="button">刷新云端记录</button>
         </div>
         <div id="record-list" class="record-list"></div>
       </section>
@@ -56,6 +58,7 @@
         <p>当前版本使用浏览器本地存储。跨设备同步需要接入云数据库。</p>
       </footer>
     </main>
+    <script src="cloud-config.js"></script>
     <script src="admin.js"></script>
   </body>
 </html>

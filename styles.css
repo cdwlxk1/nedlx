@@ -46,6 +46,9 @@ h1 { margin-bottom: 14px; font-size: clamp(32px, 5vw, 54px); line-height: 1.12; 
 .batch-description { margin: 12px 0 12px; color: var(--muted); font-size: 13px; line-height: 1.7; }
 .batch-description code { padding: 2px 5px; border-radius: 5px; color: var(--teal-dark); background: #edf7f5; font-family: Consolas, monospace; }
 #link-input { display: block; width: 100%; min-height: 94px; resize: vertical; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); outline: none; background: #fbfdfc; font-size: 14px; line-height: 1.7; }
+#admin-link-input { display: block; width: 100%; min-height: 126px; resize: vertical; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); outline: none; background: #fbfdfc; font-size: 14px; line-height: 1.7; }
+#admin-link-input:focus, #admin-password:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(8, 127, 120, 0.11); }
+.admin-password-input { display: block; width: 100%; min-height: 44px; margin-top: 10px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); outline: none; background: #fbfdfc; font-size: 14px; }
 #link-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(8, 127, 120, 0.11); }
 .batch-actions { display: flex; gap: 14px; align-items: center; margin-top: 12px; }
 .generate-button { min-height: 42px; padding: 0 18px; border: 0; border-radius: 11px; color: white; background: var(--teal); cursor: pointer; font-size: 14px; font-weight: 700; transition: background 160ms ease, transform 160ms ease; }
