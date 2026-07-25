@@ -43,7 +43,7 @@ FEISHU_LINKS_TABLE_ID=links 表的 Table ID
 FEISHU_EVENTS_TABLE_ID=events 表的 Table ID
 FEISHU_CHECKINS_TABLE_ID=checkins 表的 Table ID
 ADMIN_PASSWORD=管理员密码
-ALLOWED_ORIGIN=https://cdwlx.github.io
+ALLOWED_ORIGIN=https://cdwlxk1.github.io
 ```
 
 Worker 部署后得到一个 `https://....workers.dev` 地址。把它填写到 `cloud-config.js`：
@@ -56,6 +56,6 @@ window.LINK_HUB_CONFIG = Object.freeze({
 
 然后把 `cloud-config.js`、`index.html`、`app.js`、`admin.html`、`admin.js`、`styles.css` 上传到 GitHub 仓库根目录。
 
-公共页面：`https://cdwlx.github.io/nedlx/`
+公共页面：`https://cdwlxk1.github.io/nedlx/`
 
-管理页面：`https://cdwlx.github.io/nedlx/admin.html`
+管理页面：`https://cdwlxk1.github.io/nedlx/admin.html`

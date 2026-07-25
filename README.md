@@ -28,7 +28,7 @@
 2. 将本项目更新后的 `cloudfunctions/trackEvent` 上传并部署，并为它开启 HTTP 访问/HTTP 触发器。
 3. 在该云函数的环境变量中配置：
    - `ADMIN_PASSWORD`：管理员端使用的密码；
-   - `ALLOWED_ORIGIN`：`https://cdwlx1.github.io`。
+   - `ALLOWED_ORIGIN`：`https://cdwlxk1.github.io`。
 4. 复制云函数的 HTTP 访问地址，填写到 `link-checkin/cloud-config.js` 的 `apiUrl`：
 
 ```js
@@ -38,10 +38,10 @@ window.LINK_HUB_CONFIG = Object.freeze({
 });
 ```
 
-5. 在 CloudBase 的安全来源/安全域名中加入 `https://cdwlx1.github.io`。
+5. 在 CloudBase 的安全来源/安全域名中加入 `https://cdwlxk1.github.io`。
 6. 把 `link-checkin` 目录中的 `cloud-config.js`、`index.html`、`app.js`、`admin.html`、`admin.js`、`styles.css` 上传到 GitHub 仓库根目录。
 
-部署后，公共端是 `https://cdwlx1.github.io/nedlx/`，管理端是 `https://cdwlx1.github.io/nedlx/admin.html`。管理端输入 `ADMIN_PASSWORD` 后，可以发布链接并查看云端签到记录。
+部署后，公共端是 `https://cdwlxk1.github.io/nedlx/`，管理端是 `https://cdwlxk1.github.io/nedlx/admin.html`。管理端输入 `ADMIN_PASSWORD` 后，可以发布链接并查看云端签到记录。
 
 当前网页端用浏览器生成的 `visitorId` 识别一次访问设备，姓名来自用户填写，不等同于微信实名认证身份。如需网页端微信登录，还需要另外配置网页授权。
 
