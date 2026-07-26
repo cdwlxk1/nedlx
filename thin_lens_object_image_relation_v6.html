@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>薄透镜物象关系</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f0e8;
+  --paper: #fdfbf6;
+  --panel: #ffffff;
+  --text: #1f1d1a;
+  --text-soft: #6b6660;
+  --border: #d6cfbe;
+  --border-soft: #e8e1d0;
+  --accent: #b8350d;
+  --accent-cool: #1d3557;
+  --accent-warm: #d97a18;
+  --accent-image: #2c6878;
+  --accent-neutral: #7a7568;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(255,255,255,0.7), transparent 50%),
+    radial-gradient(circle at 90% 100%, rgba(184,53,13,0.045), transparent 55%);
+  background-attachment: fixed;
+  color: var(--text);
+  padding: 28px 20px 40px;
+  min-height: 100vh;
+  font-feature-settings: "tnum", "kern";
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+header {
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+}
+
+.brand-logo {
+  width: 190px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+h1 {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 600;
+  font-size: 26px;
+  letter-spacing: -0.005em;
+  margin: 0;
+}
+
+.subtitle {
+  color: var(--text-soft);
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.03em;
+}
+
+.plot-card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 16px 18px 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 8px 24px rgba(0,0,0,0.04);
+  position: relative;
+}
+
+.plot-card::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px dashed var(--border-soft);
+  pointer-events: none;
+  border-radius: 2px;
+}
+
+#plot {
+  width: 100%;
+  height: auto;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.status-bar {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  color: var(--text-soft);
+  margin-top: 14px;
+  padding: 9px 14px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--accent-cool);
+  border-radius: 2px;
+  letter-spacing: 0.01em;
+}
+.status-bar strong { color: var(--text); font-weight: 500; }
+
+.controls {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 22px 26px;
+  margin-top: 14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+.control-row:last-of-type { margin-bottom: 0; }
+
+.control-row label {
+  flex-shrink: 0;
+  width: 175px;
+  text-align: right;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.control-row .slider {
+  flex: 1;
+  min-width: 120px;
+}
+
+.control-row .num-input {
+  width: 96px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--paper);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  text-align: center;
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.control-row .num-input:focus {
+  outline: none;
+  border-color: var(--accent-cool);
+  box-shadow: 0 0 0 3px rgba(29, 53, 87, 0.12);
+}
+/* hide spin buttons (clean look) */
+.num-input::-webkit-inner-spin-button,
+.num-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.num-input { -moz-appearance: textfield; }
+
+.range-hint {
+  width: 110px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  color: var(--text-soft);
+  text-align: left;
+  flex-shrink: 0;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-top: 16px;
+  margin-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+.info-row .info-label {
+  width: 175px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--accent);
+}
+#dist-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.info-row.image-row {
+  padding-top: 14px;
+  margin-top: 4px;
+  border-top: 1px dashed var(--border-soft);
+}
+.info-row.image-row .info-label { color: var(--accent-image); }
+#image-dist-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--accent-image);
+  letter-spacing: 0.02em;
+}
+
+/* === 公式面板 === */
+.formula-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 18px 24px;
+  margin-top: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.formula-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  padding-bottom: 9px;
+  margin-bottom: 6px;
+  border-bottom: 1px dashed var(--border-soft);
+}
+
+.formula-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 8px 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.formula-row + .formula-row { border-top: 1px dashed var(--border-soft); }
+
+.formula-tag {
+  font-family: 'Noto Sans SC', sans-serif;
+  color: var(--text-soft);
+  white-space: nowrap;
+  min-width: 70px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.formula-expr {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+}
+
+.formula-expr .sym  { color: var(--text); }
+.formula-expr .sub  { color: var(--accent-cool); }
+.formula-expr .eq   { color: var(--text-soft); margin: 0 1px; }
+.formula-expr .res  { color: var(--accent); font-weight: 600; }
+.formula-expr .res-i{ color: var(--accent-image); font-weight: 600; }
+.formula-expr .note { color: var(--text-soft); font-style: italic; font-family: 'Noto Sans SC', sans-serif; }
+
+/* Slider — pure custom */
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 24px;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+input[type="range"].slider::-webkit-slider-runnable-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+}
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 17px;
+  height: 17px;
+  background: var(--accent-cool);
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  margin-top: -7px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.22);
+  transition: transform 0.12s ease, background-color 0.12s ease;
+}
+input[type="range"].slider::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+  background: var(--accent);
+}
+input[type="range"].slider::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+  background: var(--accent);
+}
+input[type="range"].slider::-moz-range-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  border: none;
+}
+input[type="range"].slider::-moz-range-thumb {
+  width: 17px;
+  height: 17px;
+  background: var(--accent-cool);
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.22);
+  cursor: pointer;
+}
+
+footer {
+  margin-top: 24px;
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 760px) {
+  body { padding: 20px 12px 30px; }
+  .brand-logo { width: 150px; }
+  .title-group { width: 100%; gap: 8px 14px; }
+  .control-row { flex-wrap: wrap; gap: 10px; }
+  .control-row label { width: 100%; text-align: left; }
+  .control-row .slider { flex-basis: 100%; order: 3; }
+  .range-hint { width: auto; }
+  .info-row { flex-wrap: wrap; }
+  .info-row .info-label { width: 100%; text-align: left; }
+}
+
+/* === 头部编辑按钮 === */
+.btn-edit {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-edit:hover {
+  background: var(--accent-cool);
+  color: #ffffff;
+  border-color: var(--accent-cool);
+}
+.btn-edit svg { width: 13px; height: 13px; }
+
+/* === 模态对话框 === */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 29, 26, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.16s ease;
+}
+.overlay.hidden { display: none; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.modal {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  width: min(580px, 94vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22), 0 8px 22px rgba(0, 0, 0, 0.12);
+  animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h2 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+.modal-header .modal-sub {
+  font-size: 11.5px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-soft);
+  letter-spacing: 0.05em;
+}
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-soft);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: all 0.12s;
+}
+.close-btn:hover { color: var(--accent); background: rgba(0,0,0,0.04); }
+
+.modal-body { padding: 18px 22px 8px; }
+
+.section-title {
+  font-size: 10.5px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin: 14px 0 6px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.section-title:first-child { margin-top: 0; }
+
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+}
+.param-row + .param-row { border-top: 1px dashed var(--border-soft); }
+
+.param-info { flex: 1; min-width: 0; }
+.param-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-cool);
+  letter-spacing: 0.01em;
+}
+.param-desc {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-soft);
+  margin-top: 1px;
+}
+
+.param-row input {
+  width: 110px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  text-align: center;
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.param-row input:focus {
+  outline: none;
+  border-color: var(--accent-cool);
+  box-shadow: 0 0 0 3px rgba(29, 53, 87, 0.12);
+}
+.param-row input::-webkit-inner-spin-button,
+.param-row input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.param-row input { -moz-appearance: textfield; }
+
+.error-box {
+  margin: 10px 22px 0;
+  padding: 8px 12px;
+  background: rgba(184, 53, 13, 0.08);
+  border-left: 3px solid var(--accent);
+  border-radius: 2px;
+  color: var(--accent);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.error-box.hidden { display: none; }
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  background: rgba(244, 240, 232, 0.5);
+}
+
+.btn {
+  padding: 8px 18px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.14s;
+}
+.btn-primary {
+  background: var(--accent-cool);
+  color: #ffffff;
+}
+.btn-primary:hover { background: #14283f; }
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-secondary:hover { background: rgba(0, 0, 0, 0.04); border-color: var(--text-soft); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-soft);
+  border-color: transparent;
+  margin-right: auto;
+  padding-left: 6px;
+}
+.btn-ghost:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <img class="brand-logo" src="data:image/png;base64,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" alt="NEDLX 耐德佳 logo">
+    <div class="title-group">
+      <h1>薄透镜物象关系</h1>
+      <span class="subtitle">薄透镜成像 · Thin Lens Imaging</span>
+    </div>
+    <button id="edit-btn" class="btn-edit" title="编辑参数 (E)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+      </svg>
+      编辑参数
+    </button>
+  </header>
+
+  <div class="plot-card">
+    <svg id="plot" viewBox="0 0 1100 380" preserveAspectRatio="xMidYMid meet"></svg>
+  </div>
+
+  <div class="status-bar">
+    <span id="status">状态: —</span>
+  </div>
+
+  <div class="controls">
+    <div class="control-row">
+      <label for="D-slider">屈光力  D (D) :</label>
+      <input type="range"   id="D-slider" class="slider" min="-3" max="1" step="0.01" value="1.0">
+      <input type="number"  id="D-input"  class="num-input" min="-3" max="1" step="0.01" value="1.00">
+      <span class="range-hint">[−3, +1]</span>
+    </div>
+
+    <div class="control-row">
+      <label for="d-slider">透镜-屏距离  d (mm) :</label>
+      <input type="range"   id="d-slider" class="slider" min="100" max="500" step="1" value="300">
+      <input type="number"  id="d-input"  class="num-input" min="100" max="500" step="0.1" value="300.0">
+      <span class="range-hint">[100, 500]</span>
+    </div>
+
+    <div class="info-row">
+      <span class="info-label">焦点-屏幕距离 :</span>
+      <span id="dist-display">— mm</span>
+    </div>
+
+    <div class="info-row image-row">
+      <span class="info-label">像点-透镜距离 :</span>
+      <span id="image-dist-display">— mm</span>
+    </div>
+  </div>
+
+  <div class="formula-panel">
+    <div class="formula-title">实时公式计算  ·  REAL-TIME FORMULAS</div>
+    <div id="formula-content"></div>
+  </div>
+
+  <footer>parallel rays · thin-lens approximation · drag to explore</footer>
+</div>
+
+<!-- ===== 参数编辑模态对话框 ===== -->
+<div id="settings-overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal" role="document">
+    <div class="modal-header">
+      <div>
+        <h2 id="modal-title">编辑参数</h2>
+        <div class="modal-sub">SYSTEM CONFIGURATION</div>
+      </div>
+      <button id="close-settings" class="close-btn" title="关闭 (Esc)" aria-label="关闭">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="section-title">滑轨范围</div>
+
+      <div class="param-row">
+        <div class="param-info">
+          <span class="param-name">POWER_MIN</span>
+          <span class="param-desc">屈光力下限 (D = 1/m)</span>
+        </div>
+        <input type="number" id="cfg-pow-min" step="any">
+      </div>
+      <div class="param-row">
+        <div class="param-info">
+          <span class="param-name">POWER_MAX</span>
+          <span class="param-desc">屈光力上限 (D = 1/m)</span>
+        </div>
+        <input type="number" id="cfg-pow-max" step="any">
+      </div>
+      <div class="param-row">
+        <div class="param-info">
+          <span class="param-name">DIST_MIN</span>
+          <span class="param-desc">透镜-屏距离下限 (mm), 必须 &gt; 0</span>
+        </div>
+        <input type="number" id="cfg-dist-min" step="any" min="0">
+      </div>
+      <div class="param-row">
+        <div class="param-info">
+          <span class="param-name">DIST_MAX</span>
+          <span class="param-desc">透镜-屏距离上限 (mm)</span>
+        </div>
+        <input type="number" id="cfg-dist-max" step="any">
+      </div>
+
+      <div class="section-title">物理与几何</div>
+
+      <div class="param-row">
+        <div class="param-info">
+          <span class="param-name">LENS_APERTURE</span>
+          <span class="param-desc">透镜口径 (mm)</span>
+        </div>
+        <input type="number" id="cfg-aperture" step="any" min="0">
+      </div>
+      <div class="param-row">
+        <div class="param-info">
+          <span class="param-name">NUM_RAYS</span>
+          <span class="param-desc">平行光线数 (整数, 1 ~ 50)</span>
+        </div>
+        <input type="number" id="cfg-num-rays" step="1" min="1" max="50">
+      </div>
+      <div class="param-row">
+        <div class="param-info">
+          <span class="param-name">RAY_START_OFFSET</span>
+          <span class="param-desc">入射光起始位置 (mm, 透镜左侧)</span>
+        </div>
+        <input type="number" id="cfg-ray-offset" step="any" min="0">
+      </div>
+    </div>
+
+    <div id="settings-error" class="error-box hidden"></div>
+
+    <div class="modal-footer">
+      <button id="reset-settings" class="btn btn-ghost" type="button">恢复默认</button>
+      <button id="cancel-settings" class="btn btn-secondary" type="button">取消</button>
+      <button id="save-settings"  class="btn btn-primary"  type="button">保存并应用</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// ============================================================
+//  配置参数 (与 Python 版保持一致)
+// ============================================================
+const CONFIG = {
+  POWER_MIN: -3.0, POWER_MAX: 1.0,     // 屈光力 D 范围 (单位 D = 1/m)
+  DIST_MIN:  100.0, DIST_MAX: 500.0,   // 透镜-屏距离 d 范围 (mm)
+  LENS_APERTURE: 60.0,                  // 透镜口径 (mm)
+  NUM_RAYS: 5,                          // 平行光线数
+  RAY_START_OFFSET: 120,                // 入射光起始位置 (mm, 透镜左侧)
+  RAY_HEIGHT_FRAC: 0.5,                 // 光线张开范围 = 透镜半高 × 0.5
+};
+
+// SVG 尺寸 (viewBox 单位)
+const SVG_W = 1100, SVG_H = 380;
+const PAD = { L: 56, R: 28, T: 24, B: 70 };
+
+// 颜色
+const COLOR = {
+  lensConvex:  '#1d3557',
+  lensConcave: '#b8350d',
+  lensNeutral: '#7a7568',
+  ray:         '#d97a18',
+  rayVirtual:  '#d97a18',
+  screen:      '#2b2d42',
+  focal:       '#b7791f',
+  focalPoint:  '#f2c94c',
+  objectPoint: '#1d4ed8',
+  imagePoint:  '#e60012',
+  dim:         '#8b3a1f',
+  axis:        '#9c958a',
+  grid:        '#ece4d2',
+  panel:       '#fdfbf6',
+  image:       '#2c6878',
+};
+
+// ============================================================
+//  状态
+//   - D : 屈光力 (D = 1/m)
+//   - d : 透镜-屏距离 (mm)
+// ============================================================
+const state = { D: 1.0, d: 300.0 };
+
+// 像点远场常量
+const IMG_FAR   = 1e5;     // |x_i| > 1e5 mm 视为无穷远像 (D·d→1000)
+
+// DOM 引用
+const svgEl   = document.getElementById('plot');
+const DSlider = document.getElementById('D-slider');
+const DInput  = document.getElementById('D-input');
+const dSlider = document.getElementById('d-slider');
+const dInput  = document.getElementById('d-input');
+const statusEl= document.getElementById('status');
+const distEl  = document.getElementById('dist-display');
+const imageDistEl = document.getElementById('image-dist-display');
+const formulaEl   = document.getElementById('formula-content');
+
+// ============================================================
+//  工具函数
+// ============================================================
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const fmt   = (v, n = 1) => v.toFixed(n);
+// 带显式正号的格式化 (用于公式中的代入值)
+const sgn = (v, n = 3) => (v >= 0 ? '+' : '') + v.toFixed(n);
+
+// 由屈光力 D (1/m) 求焦距 f (mm). D=0 → f=±∞ (作 Infinity 处理)
+function focalFromPower(D) {
+  if (D === 0 || !Number.isFinite(D)) return Infinity;
+  const f = 1000 / D;
+  return Number.isFinite(f) ? f : Infinity;
+}
+
+// 把屏幕轴上点视作物点, 求其经透镜成像后的位置 x_i = f·d / (f-d)
+// real=true  → 实像 (x_i < 0, 透镜左侧)
+// real=false → 虚像 (x_i > 0, 与物同侧)
+// real=true  → 实像 (x_i < 0, 透镜左侧)
+// real=false → 虚像 (x_i > 0, 与物同侧)
+// 屈光力形式: x_i (mm) = 1000·d / (1000 − D·d), 单位 D=1/m, d=mm
+function computeImage(D, d) {
+  const denom = 1000 - D * d;
+  if (Math.abs(denom) < 0.5) {
+    return { x: NaN, atInfinity: true, real: false };
+  }
+  const xi = 1000 * d / denom;
+  if (!Number.isFinite(xi) || Math.abs(xi) > IMG_FAR) {
+    return { x: xi, atInfinity: true, real: false };
+  }
+  return { x: xi, atInfinity: false, real: xi < 0 };
+}
+
+// ============================================================
+//  渲染场景 (返回 SVG 内部内容字符串)
+// ============================================================
+function buildScene(img) {
+  const { D, d } = state;
+  const lensH   = CONFIG.LENS_APERTURE / 2;   // 30
+  const screenH = lensH * 1.3;                // 39
+
+  // 由屈光力换算焦距 (mm). D=0 严格表示焦距为无穷
+  const f = focalFromPower(D);
+  const focalIsInfinite = !Number.isFinite(f);
+
+  // ---- 基础视野 (与焦距位置无关, 只取决于透镜和屏幕): ----
+  const baseLeft  = -CONFIG.RAY_START_OFFSET - 10;
+  const baseRight = d + 50;
+  const baseRange = baseRight - baseLeft;
+
+  // ---- 视野平滑扩展 ----
+  // 旧逻辑用 "if |f| > FOCAL_FAR 则不纳入焦点" 这种离散判定, 使 D 从负至正
+  // 滑过 0 附近时视野会一次性塌缩, 产生明显跳变. 改为对 |D| 的连续指数函数:
+  //   ext = maxExt · (1 − exp(−|D| / τ))
+  // D=0 时 ext=0 (基础视野); |D| 增大渐近 maxExt. 整段过程连续, 无跳变.
+  const maxExt = baseRange * 1.5;
+  const TAU    = 0.4;            // 衰减常数 (D=1 时已展开 ~92%)
+  const extLeft  = D < 0 ? maxExt * (1 - Math.exp( D / TAU)) : 0;
+  const extRight = D > 0 ? maxExt * (1 - Math.exp(-D / TAU)) : 0;
+
+  let xLeft  = baseLeft  - extLeft;
+  let xRight = baseRight + extRight;
+
+  // ---- 像点扩展 (在已平滑扩展视野上, 加额外硬上限避免极端撑爆) ----
+  let imgInView = !img.atInfinity;
+  if (!img.atInfinity) {
+    const m = Math.max(35, baseRange * 0.04);
+    if (img.x < xLeft) {
+      const desired = img.x - m;
+      const cap = baseLeft - maxExt * 1.4;
+      const newL = Math.max(cap, desired);
+      imgInView = (newL <= desired + 1);
+      xLeft = newL;
+    } else if (img.x > xRight) {
+      const desired = img.x + m;
+      const cap = baseRight + maxExt * 1.4;
+      const newR = Math.min(cap, desired);
+      imgInView = (newR >= desired - 1);
+      xRight = newR;
+    }
+  }
+
+  // 焦点是否在最终视野范围内 (用于决定是否绘制焦点 / 标注 / 尺寸线)
+  // 同时兼容下文使用的 focalAtInfinity 名称 (含义扩为 "焦点不在可视范围内")
+  const focalInView = !focalIsInfinite && f >= xLeft - 0.5 && f <= xRight + 0.5;
+  const focalAtInfinity = !focalInView;
+
+  const yMag   = Math.max(lensH * 1.8, 60);
+  const yTop   = yMag + 15;
+  const yBot   = -(yMag + 22);
+
+  // ---- 数据 -> SVG 像素的映射 ----
+  const innerW = SVG_W - PAD.L - PAD.R;
+  const innerH = SVG_H - PAD.T - PAD.B;
+  const X = x => PAD.L + ((x - xLeft) / (xRight - xLeft)) * innerW;
+  const Y = y => PAD.T + ((yTop - y)  / (yTop  - yBot )) * innerH;
+
+  // 关键像素位置
+  const X0 = X(0), Xd = X(d);
+  // 焦点像素位置: D=0 时 f=∞, 给个占位 (下文绘制焦点已用 focalAtInfinity 保护)
+  const Xf = Number.isFinite(f) ? X(f) : 0;
+  const Yaxis = Y(0);
+  const lensTop    = Y(lensH),    lensBot    = Y(-lensH);
+  const screenTop  = Y(screenH),  screenBot  = Y(-screenH);
+
+  // 镜片颜色 / 标签 (D=0 → 平板)
+  const lensColor = D > 0 ? COLOR.lensConvex
+                  : D < 0 ? COLOR.lensConcave
+                  :         COLOR.lensNeutral;
+  const lensLabel = D > 0 ? '凸透镜 (D > 0)'
+                  : D < 0 ? '凹透镜 (D < 0)'
+                  :         '平板 (D = 0, 不折射)';
+
+  const out = [];
+
+  // ============ 背景 & 网格 ============
+  out.push(`<rect x="${PAD.L}" y="${PAD.T}" width="${innerW}" height="${innerH}" fill="${COLOR.panel}"/>`);
+  // 横向参考线
+  for (const gy of [-lensH, -lensH/2, lensH/2, lensH]) {
+    const py = Y(gy);
+    out.push(`<line x1="${PAD.L}" y1="${py}" x2="${SVG_W - PAD.R}" y2="${py}" stroke="${COLOR.grid}" stroke-width="0.7"/>`);
+  }
+  // 光轴 (点划线)
+  out.push(`<line x1="${PAD.L}" y1="${Yaxis}" x2="${SVG_W - PAD.R}" y2="${Yaxis}" stroke="${COLOR.axis}" stroke-width="0.9" stroke-dasharray="9 3 1.5 3"/>`);
+  // 透镜处虚竖线
+  out.push(`<line x1="${X0}" y1="${PAD.T}" x2="${X0}" y2="${SVG_H - PAD.B}" stroke="${COLOR.grid}" stroke-width="0.6" stroke-dasharray="2 4"/>`);
+
+  // ============ 光线 ============
+  const rayHeights = [];
+  for (let i = 0; i < CONFIG.NUM_RAYS; i++) {
+    const t = CONFIG.NUM_RAYS === 1 ? 0 : (i / (CONFIG.NUM_RAYS - 1)) * 2 - 1;
+    rayHeights.push(t * lensH * CONFIG.RAY_HEIGHT_FRAC);
+  }
+  for (const h of rayHeights) {
+    // 入射段 (平行于光轴)
+    out.push(`<line x1="${X(xLeft + 5)}" y1="${Y(h)}" x2="${X0}" y2="${Y(h)}" stroke="${COLOR.ray}" stroke-width="1.0" stroke-linecap="round"/>`);
+    // 折射段: 斜率 = -h/f = -h·D/1000 (D=0 时斜率为 0, 光线保持水平)
+    const slope = -h * D / 1000;
+    const xEnd = xRight - 5;
+    const yEnd = h + slope * xEnd;
+    out.push(`<line x1="${X0}" y1="${Y(h)}" x2="${X(xEnd)}" y2="${Y(yEnd)}" stroke="${COLOR.ray}" stroke-width="1.0" stroke-linecap="round"/>`);
+    // 凹透镜 (D<0): 虚线反向延长至虚焦点 (即使焦点超出视野, SVG 会自动裁剪线段)
+    if (D < 0 && Number.isFinite(f) && Math.abs(h) > 0.1) {
+      out.push(`<line x1="${X0}" y1="${Y(h)}" x2="${Xf}" y2="${Yaxis}" stroke="${COLOR.rayVirtual}" stroke-width="0.8" stroke-dasharray="5 4" opacity="0.55"/>`);
+    }
+  }
+
+  // ============ 成像光线 (从屏幕物点出发, 青色虚线) ============
+  // 物点位于屏幕轴上点 (d, 0). 取与平行光相同的射高 h, 但跳过 h≈0 的中央射线
+  // (那条沿光轴, 与已有光轴线重合). 每条光线分为入射段(物→镜)与折射段(镜→像);
+  // 若为虚像, 再用更细密虚线在镜片右侧反向延长至虚像点.
+  if (!img.atInfinity) {
+    for (const h of rayHeights) {
+      if (Math.abs(h) < 0.5) continue;
+
+      // 入射段: 物点 (d, 0) → 透镜 (0, h)
+      out.push(`<line x1="${Xd}" y1="${Yaxis}" x2="${X0}" y2="${Y(h)}" stroke="${COLOR.image}" stroke-width="0.85" stroke-dasharray="5 4" opacity="0.72" stroke-linecap="round"/>`);
+
+      // 折射段: 从 (0, h) 出发, 经过 (x_i, 0), 即斜率 -h / x_i
+      const slopeI = -h / img.x;
+      let xeI;
+      if (img.real) {
+        // 实像 (x_i < 0): 折射光真的会聚于 (x_i, 0), 略过一点用以显示发散
+        xeI = Math.max(img.x - 30, xLeft + 5);
+      } else {
+        // 虚像 (x_i > 0): 折射光实际向左发散, 画到视野边缘
+        xeI = xLeft + 5;
+      }
+      const yeI = h + slopeI * xeI;
+      out.push(`<line x1="${X0}" y1="${Y(h)}" x2="${X(xeI)}" y2="${Y(yeI)}" stroke="${COLOR.image}" stroke-width="0.85" stroke-dasharray="5 4" opacity="0.72" stroke-linecap="round"/>`);
+
+      // 虚像专有: 反向延长 (透镜右侧) 至虚像点, 用更细密虚线
+      if (!img.real) {
+        out.push(`<line x1="${X0}" y1="${Y(h)}" x2="${X(img.x)}" y2="${Yaxis}" stroke="${COLOR.image}" stroke-width="0.65" stroke-dasharray="3 3" opacity="0.5"/>`);
+      }
+    }
+  }
+
+  // ============ 透镜 (画在光线之上) ============
+  out.push(`<line x1="${X0}" y1="${lensTop}" x2="${X0}" y2="${lensBot}" stroke="${lensColor}" stroke-width="3" stroke-linecap="round"/>`);
+  const a = 5; // 箭头大小 (像素)
+  if (D > 0) {
+    out.push(`<polyline points="${X0-a},${lensTop+a} ${X0},${lensTop} ${X0+a},${lensTop+a}" fill="none" stroke="${lensColor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+    out.push(`<polyline points="${X0-a},${lensBot-a} ${X0},${lensBot} ${X0+a},${lensBot-a}" fill="none" stroke="${lensColor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+  } else if (D < 0) {
+    out.push(`<polyline points="${X0-a},${lensTop-a} ${X0},${lensTop} ${X0+a},${lensTop-a}" fill="none" stroke="${lensColor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+    out.push(`<polyline points="${X0-a},${lensBot+a} ${X0},${lensBot} ${X0+a},${lensBot+a}" fill="none" stroke="${lensColor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+  }
+  // D=0: 仅画竖线, 无箭头 (平板, 不折射)
+
+  // ============ E字标 ============
+  out.push(`<line x1="${Xd}" y1="${screenTop}" x2="${Xd}" y2="${screenBot}" stroke="${COLOR.screen}" stroke-width="3.5" stroke-linecap="round"/>`);
+
+  // ============ 物点标记 ============
+  out.push(`<circle cx="${Xd}" cy="${Yaxis}" r="4.2" fill="${COLOR.objectPoint}" stroke="#ffffff" stroke-width="1.1"/>`);
+
+  // ============ 焦点标记 ============
+  if (!focalAtInfinity) {
+    out.push(`<circle cx="${Xf}" cy="${Yaxis}" r="4.2" fill="${COLOR.focalPoint}" stroke="#ffffff" stroke-width="1.1"/>`);
+  }
+
+  // ============ 像点标记 (红色小圆点) ============
+  if (!img.atInfinity && imgInView) {
+    const Xi = X(img.x);
+    out.push(`<circle cx="${Xi}" cy="${Yaxis}" r="4.2" fill="${COLOR.imagePoint}" stroke="#ffffff" stroke-width="1.1"/>`);
+  }
+
+  // ============ 文字标签 ============
+  const SANS = `font-family="'Noto Sans SC', sans-serif"`;
+  const MONO = `font-family="'JetBrains Mono', monospace"`;
+  // 用 paint-order: stroke fill 制造白色描边, 避免与图形重叠
+  const haloStyle = `paint-order="stroke" stroke="#ffffff" stroke-width="3.2" stroke-linejoin="round"`;
+
+  const focalLabelNameY = SVG_H - PAD.B - 36;
+  const focalLabelValY  = SVG_H - PAD.B - 24;
+  const imageLabelNameY = SVG_H - PAD.B - 10;
+  const imageLabelValY  = SVG_H - PAD.B + 2;
+
+  // 透镜标签 (在镜上方)
+  out.push(`<text x="${X0}" y="${lensTop - 11}" text-anchor="middle" ${SANS} font-size="12.5" font-weight="600" fill="${lensColor}" ${haloStyle}>${lensLabel}</text>`);
+
+  // E字标标签
+  out.push(`<text x="${Xd}" y="${screenTop - 9}"  text-anchor="middle" ${SANS} font-size="12.5" font-weight="600" fill="${COLOR.screen}" ${haloStyle}>E字标</text>`);
+  out.push(`<text x="${Xd}" y="${screenBot + 16}" text-anchor="middle" ${MONO} font-size="10.5" fill="${COLOR.screen}" ${haloStyle}>x = ${fmt(d)} mm</text>`);
+  out.push(`<text x="${Xd - 10}" y="${Yaxis - 19}" text-anchor="end" ${SANS} font-size="11.5" font-weight="600" fill="${COLOR.objectPoint}" ${haloStyle}>物点</text>`);
+
+  // 焦点标签放在图下方
+  if (!focalAtInfinity) {
+    const fpName = D > 0 ? `实焦点 F′` : `虚焦点 F′`;
+    const fpVal  = `x = ${fmt(f)} mm`;
+    out.push(`<text x="${Xf}" y="${focalLabelNameY}" text-anchor="middle" ${SANS} font-size="11.5" font-weight="600" fill="${COLOR.focal}" ${haloStyle}>${fpName}</text>`);
+    out.push(`<text x="${Xf}" y="${focalLabelValY}" text-anchor="middle" ${MONO} font-size="10.5" fill="${COLOR.focal}" ${haloStyle}>${fpVal}</text>`);
+  }
+
+  // 像点标签放在图下方
+  if (!img.atInfinity && imgInView) {
+    const Xi = X(img.x);
+    const imName = img.real ? '实像 P′' : '虚像 P′';
+    const imVal  = `x = ${fmt(img.x)} mm`;
+    out.push(`<text x="${Xi}" y="${imageLabelNameY}" text-anchor="middle" ${SANS} font-size="11.5" font-weight="600" fill="${COLOR.imagePoint}" ${haloStyle}>${imName}</text>`);
+    out.push(`<text x="${Xi}" y="${imageLabelValY}" text-anchor="middle" ${MONO} font-size="10.5" fill="${COLOR.imagePoint}" ${haloStyle}>${imVal}</text>`);
+  } else if (!img.atInfinity && !imgInView) {
+    // 像点出视野时, 仍把标注放在图下方
+    const farLeft = img.x < xLeft;
+    const edgeX   = farLeft ? (PAD.L + 60) : (SVG_W - PAD.R - 60);
+    const arrow   = farLeft ? '◄ ' : ' ►';
+    const imName  = img.real ? '实像 P′' : '虚像 P′';
+    out.push(`<text x="${edgeX}" y="${imageLabelNameY}" text-anchor="middle" ${SANS} font-size="11.5" font-weight="600" fill="${COLOR.imagePoint}" ${haloStyle}>${farLeft ? arrow + imName : imName + arrow}</text>`);
+    out.push(`<text x="${edgeX}" y="${imageLabelValY}" text-anchor="middle" ${MONO} font-size="10.5" fill="${COLOR.imagePoint}" ${haloStyle}>x = ${fmt(img.x)} mm</text>`);
+  }
+
+  // ============ 尺寸标注: 像点 ↔ 透镜 (移到视图上方) ============
+  if (!img.atInfinity) {
+    const imageDist = Math.abs(img.x);
+    const dimY = PAD.T + 14;
+
+    if (imgInView) {
+      const Xi = X(img.x);
+      const P1 = Math.min(X0, Xi), P2 = Math.max(X0, Xi);
+      out.push(`<line x1="${P1}" y1="${dimY-5}" x2="${P1}" y2="${dimY+5}" stroke="${COLOR.dim}" stroke-width="1.0"/>`);
+      out.push(`<line x1="${P2}" y1="${dimY-5}" x2="${P2}" y2="${dimY+5}" stroke="${COLOR.dim}" stroke-width="1.0"/>`);
+      out.push(`<line x1="${P1+5}" y1="${dimY}" x2="${P2-5}" y2="${dimY}" stroke="${COLOR.dim}" stroke-width="1.05"/>`);
+      const ah = 5;
+      out.push(`<polygon points="${P1},${dimY} ${P1+ah},${dimY-ah*0.55} ${P1+ah},${dimY+ah*0.55}" fill="${COLOR.dim}"/>`);
+      out.push(`<polygon points="${P2},${dimY} ${P2-ah},${dimY-ah*0.55} ${P2-ah},${dimY+ah*0.55}" fill="${COLOR.dim}"/>`);
+      const mid = (P1 + P2) / 2;
+      out.push(`<text x="${mid}" y="${dimY - 8}" text-anchor="middle" ${MONO} font-size="10.8" font-weight="500" fill="${COLOR.dim}" ${haloStyle}>像点-透镜距离 = ${fmt(imageDist)} mm</text>`);
+    } else {
+      const edgeX = img.x < xLeft ? (PAD.L + 86) : (SVG_W - PAD.R - 86);
+      out.push(`<text x="${edgeX}" y="${dimY - 8}" text-anchor="middle" ${MONO} font-size="10.8" font-weight="500" fill="${COLOR.dim}" ${haloStyle}>像点-透镜距离 = ${fmt(imageDist)} mm</text>`);
+    }
+  }
+
+  // ============ 坐标轴提示 ============
+  out.push(`<text x="${X0}" y="${SVG_H - PAD.B + 16}" text-anchor="middle" ${MONO} font-size="10" fill="${COLOR.axis}">x = 0</text>`);
+  out.push(`<text x="${SVG_W - PAD.R}" y="${Yaxis - 6}" text-anchor="end" ${MONO} font-size="10.5" fill="${COLOR.axis}" font-style="italic">x (mm)</text>`);
+
+  return out.join('');
+}
+
+// ============================================================
+//  状态文字 + 距离显示
+// ============================================================
+function updateTexts(img) {
+  const { D, d } = state;
+  const f = focalFromPower(D);
+  let status, distText;
+
+  if (D === 0) {
+    status   = `D = 0 (平板, 不折射):  平行光保持平行,  焦点位于无穷远`;
+    distText = `—  mm    (焦距无穷远,  d − f → −∞)`;
+  } else {
+    const gap = d - f;
+    const fStr = `f = ${fmt(f)} mm  (D = ${sgn(D, 2)} D)`;
+    if (D > 0) {
+      if (Math.abs(gap) < 0.5) {
+        status   = `焦点恰好落在屏幕上:  ${fStr},  d = ${fmt(d)} mm`;
+        distText = `0.0 mm     (焦点恰好在屏幕上)`;
+      } else if (gap > 0) {
+        status   = `汇聚于屏幕前方:  ${fStr},  距屏幕 ${fmt(gap)} mm`;
+        distText = `${fmt(gap)} mm     (焦点位于屏幕前方,  d − f = ${fmt(gap)})`;
+      } else {
+        status   = `汇聚于屏幕后方:  ${fStr},  在屏幕后方 ${fmt(-gap)} mm`;
+        distText = `${fmt(-gap)} mm     (焦点位于屏幕后方,  d − f = ${fmt(gap)})`;
+      }
+    } else {
+      status   = `发散光:  虚焦点位于透镜左侧 ${fStr}  (透镜左方 ${fmt(-f)} mm)`;
+      distText = `${fmt(gap)} mm     (虚焦点在屏幕左侧,  d − f = ${fmt(gap)})`;
+    }
+  }
+  statusEl.innerHTML = `<strong>状态:</strong>  ${status}`;
+  distEl.textContent = distText;
+
+  // 像点-透镜距离 (透镜位于 x=0, 故距离 = |x_i|)
+  let imgText;
+  if (img.atInfinity) {
+    imgText = `—  mm    (像点位于无穷远, D·d ≈ 1)`;
+  } else {
+    const id = Math.abs(img.x);
+    const ty = img.real ? '实像' : '虚像';
+    const side = img.real ? '透镜左侧' : '透镜右侧';
+    imgText = `${fmt(id)} mm     (${ty},  ${side},  x_i = ${fmt(img.x)} mm)`;
+  }
+  imageDistEl.textContent = imgText;
+}
+
+// ============================================================
+//  公式面板: 实时显示焦距和像点的计算过程
+// ============================================================
+function updateFormulas(img) {
+  const { D, d } = state;
+  const dm = d / 1000;   // d in meters
+
+  // 包裹值: 正数显式带 "+", 负数用 Unicode "−" 看着舒服
+  const wrap = (v, n=3) => {
+    const s = v.toFixed(n);
+    if (v < 0) return `(−${(-v).toFixed(n)})`;
+    return `(+${s})`;
+  };
+
+  // ── 焦距公式: f = 1/D ──
+  let focalRow;
+  if (D === 0) {
+    focalRow = `
+      <div class="formula-row">
+        <span class="formula-tag">焦距</span>
+        <span class="formula-expr">
+          <span class="sym">f = 1 / D</span><span class="eq">=</span>
+          <span class="sub">1 / 0</span><span class="eq">=</span>
+          <span class="res">∞</span>
+          <span class="note">(透镜不折射, 平行光不汇聚)</span>
+        </span>
+      </div>`;
+  } else {
+    const fM  = 1 / D;
+    const fMM = 1000 / D;
+    focalRow = `
+      <div class="formula-row">
+        <span class="formula-tag">焦距</span>
+        <span class="formula-expr">
+          <span class="sym">f = 1 / D</span><span class="eq">=</span>
+          <span class="sub">1 / ${wrap(D, 3)}</span><span class="eq">=</span>
+          <span class="res">${sgn(fM, 3)} m  =  ${sgn(fMM, 1)} mm</span>
+        </span>
+      </div>`;
+  }
+
+  // ── 像点公式: x_i = d / (1 − D·d) ──
+  const Dd      = D * dm;
+  const denom   = 1 - Dd;
+  let imageRow;
+  if (Math.abs(denom) < 5e-4) {
+    imageRow = `
+      <div class="formula-row">
+        <span class="formula-tag">像点</span>
+        <span class="formula-expr">
+          <span class="sym">x<sub>i</sub> = d / (1 − D·d)</span><span class="eq">=</span>
+          <span class="sub">${dm.toFixed(3)} / (1 − ${Dd.toFixed(3)})</span><span class="eq">=</span>
+          <span class="sub">${dm.toFixed(3)} / 0</span><span class="eq">=</span>
+          <span class="res-i">∞</span>
+          <span class="note">(屏幕处于焦面, 像位于无穷远)</span>
+        </span>
+      </div>`;
+  } else {
+    const xiM  = dm / denom;
+    const xiMM = xiM * 1000;
+    imageRow = `
+      <div class="formula-row">
+        <span class="formula-tag">像点</span>
+        <span class="formula-expr">
+          <span class="sym">x<sub>i</sub> = d / (1 − D·d)</span><span class="eq">=</span>
+          <span class="sub">${dm.toFixed(3)} / (1 − ${wrap(D, 3)}·${dm.toFixed(3)})</span><span class="eq">=</span>
+          <span class="sub">${dm.toFixed(3)} / ${denom.toFixed(3)}</span><span class="eq">=</span>
+          <span class="res-i">${sgn(xiM, 4)} m  =  ${sgn(xiMM, 1)} mm</span>
+        </span>
+      </div>`;
+  }
+
+  formulaEl.innerHTML = focalRow + imageRow;
+}
+
+function update() {
+  const img = computeImage(state.D, state.d);
+  svgEl.innerHTML = buildScene(img);
+  updateTexts(img);
+  updateFormulas(img);
+}
+
+// ============================================================
+//  事件绑定 (滑轨 <-> 输入框 双向同步)
+// ============================================================
+function setD(v) {
+  const nv0 = parseFloat(v);
+  if (!Number.isFinite(nv0)) return;
+  const nv = clamp(nv0, CONFIG.POWER_MIN, CONFIG.POWER_MAX);
+  state.D = nv;
+  // 不覆盖正在编辑的元素
+  if (document.activeElement !== DSlider) DSlider.value = nv;
+  if (document.activeElement !== DInput)  DInput.value  = nv.toFixed(2);
+  update();
+}
+
+function setDist(v) {
+  const nv0 = parseFloat(v);
+  if (!Number.isFinite(nv0)) return;
+  const nv = clamp(nv0, CONFIG.DIST_MIN, CONFIG.DIST_MAX);
+  state.d = nv;
+  if (document.activeElement !== dSlider) dSlider.value = nv;
+  if (document.activeElement !== dInput)  dInput.value  = nv.toFixed(1);
+  update();
+}
+
+DSlider.addEventListener('input',  e => setD(e.target.value));
+dSlider.addEventListener('input',  e => setDist(e.target.value));
+DInput .addEventListener('input',  e => setD(e.target.value));
+dInput .addEventListener('input',  e => setDist(e.target.value));
+// 编辑完成时, 把显示规整为合适小数位
+DInput.addEventListener('change', () => { DInput.value = state.D.toFixed(2); });
+dInput.addEventListener('change', () => { dInput.value = state.d.toFixed(1); });
+DInput.addEventListener('blur',   () => { DInput.value = state.D.toFixed(2); });
+dInput.addEventListener('blur',   () => { dInput.value = state.d.toFixed(1); });
+
+// ============================================================
+//  初始渲染
+// ============================================================
+DSlider.value = state.D; DInput.value = state.D.toFixed(2);
+dSlider.value = state.d; dInput.value = state.d.toFixed(1);
+update();
+
+// 字体加载完成后重绘一次, 让带描边的标签像素位置稳定
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => update());
+}
+
+// ============================================================
+//  参数编辑模态对话框
+// ============================================================
+const DEFAULTS = Object.freeze({ ...CONFIG });
+
+const overlay   = document.getElementById('settings-overlay');
+const editBtn   = document.getElementById('edit-btn');
+const closeBtn  = document.getElementById('close-settings');
+const cancelBtn = document.getElementById('cancel-settings');
+const resetBtn  = document.getElementById('reset-settings');
+const saveBtn   = document.getElementById('save-settings');
+const errorEl   = document.getElementById('settings-error');
+
+// 参数 key -> 输入框 id
+const CFG_FIELDS = {
+  POWER_MIN:        'cfg-pow-min',
+  POWER_MAX:        'cfg-pow-max',
+  DIST_MIN:         'cfg-dist-min',
+  DIST_MAX:         'cfg-dist-max',
+  LENS_APERTURE:    'cfg-aperture',
+  NUM_RAYS:         'cfg-num-rays',
+  RAY_START_OFFSET: 'cfg-ray-offset',
+};
+const INT_FIELDS = new Set(['NUM_RAYS']);
+
+// range-hint 元素引用 (按出现顺序: D 在前, d 在后)
+const rangeHints = document.querySelectorAll('.range-hint');
+// 用 Unicode "−" 渲染负号 (与初始 HTML 一致)
+const fmtRange = (lo, hi) => {
+  const a = lo < 0 ? '−' + Math.abs(lo) : '+' + lo;
+  const b = hi < 0 ? '−' + Math.abs(hi) : '+' + hi;
+  return `[${a}, ${b}]`;
+};
+const fmtRangeMM = (lo, hi) => `[${lo}, ${hi}]`;
+
+function fillSettingsForm(src) {
+  for (const [key, id] of Object.entries(CFG_FIELDS)) {
+    document.getElementById(id).value = src[key];
+  }
+  errorEl.classList.add('hidden');
+}
+
+function readSettingsForm() {
+  const c = {};
+  for (const [key, id] of Object.entries(CFG_FIELDS)) {
+    const raw = document.getElementById(id).value;
+    const v = INT_FIELDS.has(key) ? parseInt(raw, 10) : parseFloat(raw);
+    c[key] = v;
+  }
+  return c;
+}
+
+function validateSettings(c) {
+  const errs = [];
+  for (const [k, v] of Object.entries(c)) {
+    if (!Number.isFinite(v)) errs.push(`${k} 必须是有效数值`);
+  }
+  if (errs.length) return errs;
+  if (c.POWER_MIN >= c.POWER_MAX) errs.push('POWER_MIN 必须小于 POWER_MAX');
+  if (c.DIST_MIN  >= c.DIST_MAX ) errs.push('DIST_MIN 必须小于 DIST_MAX');
+  if (c.DIST_MIN  <= 0)           errs.push('DIST_MIN 必须大于 0');
+  if (c.LENS_APERTURE <= 0)       errs.push('LENS_APERTURE 必须大于 0');
+  if (!Number.isInteger(c.NUM_RAYS) || c.NUM_RAYS < 1 || c.NUM_RAYS > 50)
+                                  errs.push('NUM_RAYS 必须是 1 ~ 50 之间的整数');
+  if (c.RAY_START_OFFSET <= 0)    errs.push('RAY_START_OFFSET 必须大于 0');
+  return errs;
+}
+
+function applySettings(c) {
+  // 写入运行时 CONFIG (保留 RAY_HEIGHT_FRAC)
+  for (const k of Object.keys(CFG_FIELDS)) CONFIG[k] = c[k];
+
+  // 更新滑轨 / 输入框的范围属性
+  DSlider.min = c.POWER_MIN; DSlider.max = c.POWER_MAX;
+  DInput.min  = c.POWER_MIN; DInput.max  = c.POWER_MAX;
+  dSlider.min = c.DIST_MIN;  dSlider.max = c.DIST_MAX;
+  dInput.min  = c.DIST_MIN;  dInput.max  = c.DIST_MAX;
+
+  // 更新范围提示文字
+  if (rangeHints.length >= 2) {
+    rangeHints[0].textContent = fmtRange  (c.POWER_MIN, c.POWER_MAX);
+    rangeHints[1].textContent = fmtRangeMM(c.DIST_MIN,  c.DIST_MAX);
+  }
+
+  // 当前 state 越界时裁剪回新范围
+  state.D = clamp(state.D, c.POWER_MIN, c.POWER_MAX);
+  state.d = clamp(state.d, c.DIST_MIN,  c.DIST_MAX);
+  DSlider.value = state.D; DInput.value = state.D.toFixed(2);
+  dSlider.value = state.d; dInput.value = state.d.toFixed(1);
+
+  update();
+}
+
+function openSettings() {
+  fillSettingsForm(CONFIG);
+  overlay.classList.remove('hidden');
+  // 自动 focus 第一项
+  setTimeout(() => document.getElementById('cfg-pow-min').focus(), 30);
+}
+function closeSettings() { overlay.classList.add('hidden'); }
+
+editBtn  .addEventListener('click', openSettings);
+closeBtn .addEventListener('click', closeSettings);
+cancelBtn.addEventListener('click', closeSettings);
+
+overlay.addEventListener('click', e => { if (e.target === overlay) closeSettings(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeSettings();
+  // 按 E 打开 (输入框聚焦时除外)
+  if ((e.key === 'e' || e.key === 'E') && overlay.classList.contains('hidden')) {
+    const t = e.target;
+    if (!t || (t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA')) {
+      e.preventDefault(); openSettings();
+    }
+  }
+});
+
+resetBtn.addEventListener('click', () => fillSettingsForm(DEFAULTS));
+
+saveBtn.addEventListener('click', () => {
+  const c = readSettingsForm();
+  const errors = validateSettings(c);
+  if (errors.length) {
+    errorEl.textContent = '错误: ' + errors.join('; ');
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  applySettings(c);
+  closeSettings();
+});
+
+// 回车 = 保存
+overlay.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+});
+</script>
+</body>
+</html>

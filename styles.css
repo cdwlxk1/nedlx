@@ -101,6 +101,16 @@ h1 { margin-bottom: 14px; font-size: clamp(32px, 5vw, 54px); line-height: 1.12; 
 .feedback { min-height: 20px; margin: 12px 0 0; color: var(--muted); font-size: 13px; }
 .feedback.success { color: #26745e; }
 .feedback.error { color: var(--danger); }
+.tools-section { margin-top: 34px; }
+.tools-section .eyebrow { margin-bottom: 8px; }
+.tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+.tool-card { display: flex; min-height: 180px; flex-direction: column; padding: 20px; border: 1px solid var(--line); border-radius: 18px; color: var(--ink); background: rgba(255, 255, 255, 0.75); text-decoration: none; box-shadow: 0 8px 22px rgba(24, 63, 67, 0.035); transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
+.tool-card:hover { border-color: #b9d9d4; background: white; box-shadow: 0 12px 28px rgba(24, 63, 67, 0.08); transform: translateY(-2px); }
+.tool-card:focus-visible { outline: 3px solid rgba(8, 127, 120, 0.25); outline-offset: 3px; }
+.tool-number { color: var(--gold); font-family: Georgia, serif; font-size: 16px; font-style: italic; }
+.tool-title { margin-top: 22px; font-size: 17px; line-height: 1.45; }
+.tool-description { margin-top: 6px; color: var(--muted); font-size: 13px; line-height: 1.65; }
+.tool-link { display: inline-flex; gap: 7px; align-items: center; margin-top: auto; padding-top: 18px; color: var(--teal-dark); font-size: 13px; font-weight: 800; }
 .page-footer { margin-top: 30px; padding: 0 4px; color: #829397; font-size: 12px; line-height: 1.8; }
 .page-footer p { margin-bottom: 3px; }
 .page-footer a, .back-link { color: var(--teal-dark); font-weight: 700; }
@@ -129,6 +139,8 @@ h1 { margin-bottom: 14px; font-size: clamp(32px, 5vw, 54px); line-height: 1.12; 
   .card-actions { display: grid; gap: 10px; }
   .open-link-button { width: 100%; min-height: 44px; }
   .confirm-button { padding: 0 14px; }
+  .tool-grid { grid-template-columns: 1fr; }
+  .tool-card { min-height: 160px; }
   .admin-link-item, .record-item { align-items: flex-start; flex-direction: column; gap: 5px; }
   .admin-link-item span, .record-item span { max-width: 100%; }
 }

@@ -5,14 +5,25 @@
 1. 视频号内容：<https://weixin.qq.com/sph/AQk4HX6E6v>
 2. 微信公众号文章：<https://mp.weixin.qq.com/s/YeI2lXYCQ9_Zal0_oq1USA>
 
-## 两个网页
+## 签到网页
 
 - `index.html`：公共浏览端。用户填写一次姓名，打开链接并签到。
 - `admin.html`：管理端。粘贴链接，用英文分号 `;`、中文分号 `；` 或换行分隔，然后点击“发布到公共端”。最多生成 6 个链接窗口。
 
+## 光学工具页
+
+首页的“光学工具”区域已经接入以下 4 个独立页面：
+
+- `optical_layout.html`：光学系统布局、像面扫描与视标卷积成像。
+- `thin_lens_object_image_relation_v6.html`：薄透镜物象关系 V6。
+- `preview.html`：薄透镜物象关系预览版。
+- `optics_app.html`：几何光学交互系统，主题为薄透镜成像。
+
+这些页面均为独立 HTML，不依赖本目录中的额外脚本或图片；薄透镜页面会尝试加载 Google Fonts，加载失败时仍可正常显示。放在本目录后即可通过 GitHub Pages 直接访问。原始文件名分别为 `optical_layout(3).html`、`thin_lens_object_image_relation_v6.html`、`preview.html` 和 `optics_app (1).html`；其中两个带括号的文件已改为更适合网页地址的名称。
+
 ## 使用方法
 
-双击打开 `index.html`，或把整个 `link-checkin` 文件夹部署到任意静态网页空间。
+双击打开 `index.html` 可以预览页面，本机签到记录会保存在浏览器中；如果要启用跨设备同步，请把整个 `link-checkin` 文件夹部署到 HTTPS 静态网页空间（例如 GitHub Pages）。直接使用 `file://` 预览时，云端接口会受到浏览器来源限制，这是预期行为。
 
 管理员打开 `admin.html` 发布链接；其他人打开 `index.html`，在页面上方填写一次姓名，然后点击“打开链接”查看内容，再点击对应的“确定签到”。每个链接不再重复填写姓名。
 
