@@ -60,6 +60,10 @@
           <span id="link-count-text" class="link-count-text"></span>
         </div>
         <div id="link-list" class="link-list" aria-live="polite"></div>
+        <div class="submit-panel">
+          <button id="submit-all-button" class="submit-all-button" type="button">提交签到</button>
+          <p id="submit-feedback" class="submit-feedback" role="status"></p>
+        </div>
       </section>
 
       <section class="tools-section" aria-labelledby="tools-title">
@@ -114,11 +118,14 @@
         <p class="card-description"></p>
         <div class="url-preview"></div>
         <div class="screenshot-upload">
-          <label class="screenshot-label">
-            <span>点赞/红心截图</span>
-            <input class="screenshot-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/ico,image/tiff,image/heic" />
-          </label>
-          <p class="upload-help">打开链接完成点赞或红心后，截屏并上传（图片不超过 10MB）。</p>
+          <div class="screenshot-row">
+            <span class="screenshot-label">点赞/红心截图（可选）</span>
+            <label class="screenshot-picker">
+              选择截图
+              <input class="screenshot-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/ico,image/tiff,image/heic" />
+            </label>
+          </div>
+          <p class="upload-help">如需留存凭证，可在完成点赞或红心后上传截图；不上传也可以正常签到。</p>
           <div class="screenshot-preview" hidden>
             <img class="screenshot-preview-image" alt="已选择的截图预览" />
             <span class="screenshot-file-name"></span>
@@ -129,7 +136,6 @@
             <span class="open-link-label">打开链接</span>
             <span class="arrow" aria-hidden="true">↗</span>
           </a>
-          <button class="confirm-button" type="button">确定签到</button>
         </div>
         <p class="feedback" role="status"></p>
       </article>
