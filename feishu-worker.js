@@ -13,8 +13,10 @@ export default {
 
     try {
       if (request.method !== "POST") return json({ ok: false, error: "只支持 POST 请求" }, 405, corsHeaders);
-      const body = await request.json();
-      const result = await handle(body, env);
+      const contentType = request.headers.get("Content-Type") || "";
+      const result = contentType.toLowerCase().startsWith("multipart/form-data")
+        ? await handleMultipart(await request.formData(), env)
+        : await handle(await request.json(), env);
       return json({ ok: true, ...result }, 200, corsHeaders);
     } catch (error) {
       const status = error.statusCode || 500;
@@ -34,6 +36,20 @@ function getCorsHeaders(request, env) {
     "Content-Type": "application/json; charset=utf-8",
     "Vary": "Origin"
   };
+}
+
+async function handleMultipart(form, env) {
+  const action = clean(form.get("action"), 40);
+  if (action !== "checkin") throw httpError(400, "不支持的上传操作");
+  const screenshot = form.get("screenshot");
+  if (!(screenshot instanceof File)) throw httpError(400, "请上传签到截图");
+  return checkinRecord({
+    visitorId: form.get("visitorId"),
+    name: form.get("name"),
+    linkId: form.get("linkId"),
+    linkTitle: form.get("linkTitle"),
+    linkUrl: form.get("linkUrl")
+  }, env, screenshot);
 }
 
 function json(value, status, headers) {
@@ -70,17 +86,7 @@ async function handle(request, env) {
   }
 
   if (action === "checkin") {
-    const visitorId = clean(request.visitorId, 120);
-    const name = clean(request.name, 40);
-    const linkId = clean(request.linkId, 80);
-    const linkUrl = clean(request.linkUrl, 2000);
-    if (!visitorId || !name || !linkId || !isHttpUrl(linkUrl)) throw httpError(400, "签到信息不完整");
-    const day = beijingDay();
-    const fields = { visitorId, 姓名: name, 链接ID: linkId, 链接标题: clean(request.linkTitle, 100), 链接地址: linkUrl, 签到时间: new Date().toISOString(), 日期: day };
-    const existing = (await listRecords(env, env.FEISHU_CHECKINS_TABLE_ID)).find((item) => item.visitorId === visitorId && item.linkId === linkId && item.day === day);
-    if (existing) await updateRecord(env, env.FEISHU_CHECKINS_TABLE_ID, existing.recordId, fields);
-    else await createRecord(env, env.FEISHU_CHECKINS_TABLE_ID, fields);
-    return { status: "checked-in", name, day };
+    return checkinRecord(request, env);
   }
 
   if (action === "getRecords") {
@@ -93,6 +99,37 @@ async function handle(request, env) {
   }
 
   throw httpError(400, "不支持的操作");
+}
+
+async function checkinRecord(request, env, screenshot) {
+  const visitorId = clean(request.visitorId, 120);
+  const name = clean(request.name, 40);
+  const linkId = clean(request.linkId, 80);
+  const linkUrl = clean(request.linkUrl, 2000);
+  if (!visitorId || !name || !linkId || !isHttpUrl(linkUrl)) throw httpError(400, "签到信息不完整");
+
+  let attachment;
+  if (screenshot) {
+    if (!(screenshot instanceof File)) throw httpError(400, "截图格式不正确");
+    validateScreenshot(screenshot);
+    attachment = await uploadFeishuAttachment(env, screenshot);
+  }
+
+  const day = beijingDay();
+  const fields = {
+    visitorId,
+    姓名: name,
+    链接ID: linkId,
+    链接标题: clean(request.linkTitle, 100),
+    链接地址: linkUrl,
+    签到时间: new Date().toISOString(),
+    日期: day
+  };
+  if (attachment) fields.截图 = [attachment];
+  const existing = (await listRecords(env, env.FEISHU_CHECKINS_TABLE_ID)).find((item) => item.visitorId === visitorId && item.linkId === linkId && item.day === day);
+  if (existing) await updateRecord(env, env.FEISHU_CHECKINS_TABLE_ID, existing.recordId, fields);
+  else await createRecord(env, env.FEISHU_CHECKINS_TABLE_ID, fields);
+  return { status: "checked-in", name, day, screenshot: Boolean(attachment) };
 }
 
 async function getLinks(env) {
@@ -125,6 +162,40 @@ async function feishuRequest(env, path, options = {}) {
   return result;
 }
 
+async function feishuMultipartRequest(env, path, formData) {
+  const token = await getTenantAccessToken(env);
+  const response = await fetch(`${FEISHU_API_BASE}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData
+  });
+  const result = await response.json();
+  if (!response.ok || result.code !== 0) throw httpError(500, `飞书附件上传失败：${result.msg || response.status}`);
+  return result;
+}
+
+function validateScreenshot(file) {
+  const maxBytes = 10 * 1024 * 1024;
+  if (!file || file.size <= 0) throw httpError(400, "截图不能为空");
+  if (file.size > maxBytes) throw httpError(400, "截图不能超过 10MB");
+  if (!String(file.type || "").toLowerCase().startsWith("image/")) throw httpError(400, "截图必须是图片格式");
+}
+
+async function uploadFeishuAttachment(env, file) {
+  if (!env.FEISHU_APP_TOKEN) throw httpError(500, "Worker 尚未配置飞书多维表格 App Token");
+  const fileName = clean(String(file.name || "checkin-screenshot.png").replace(/[\\/\r\n]/g, "_"), 180) || "checkin-screenshot.png";
+  const formData = new FormData();
+  formData.append("file_name", fileName);
+  formData.append("parent_type", "bitable_file");
+  formData.append("parent_node", String(env.FEISHU_APP_TOKEN));
+  formData.append("size", String(file.size));
+  formData.append("file", file, fileName);
+  const result = await feishuMultipartRequest(env, "/drive/v1/medias/upload_all", formData);
+  const fileToken = result.data && result.data.file_token;
+  if (!fileToken) throw httpError(500, "飞书没有返回附件 file_token");
+  return { file_token: fileToken, name: fileName, size: file.size, type: file.type || "image/png" };
+}
+
 async function listRecords(env, tableId) {
   if (!tableId) throw httpError(500, "Worker 尚未配置表格 ID");
   const rows = [];
@@ -155,13 +226,23 @@ function toRow(item) {
     linkUrl: fieldText(fields.链接地址),
     time: fieldText(fields.点击时间 || fields.签到时间),
     checkedAt: fieldText(fields.签到时间),
-    day: fieldText(fields.日期)
+    day: fieldText(fields.日期),
+    screenshot: fieldAttachments(fields.截图)
   };
 }
 
 function fieldText(value) {
   if (Array.isArray(value)) return value.map((item) => item && typeof item === "object" ? item.text || item.name || "" : String(item)).join(", ");
   return value === undefined || value === null ? "" : String(value);
+}
+
+function fieldAttachments(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item) => item && typeof item === "object").map((item) => ({
+    name: clean(item.name, 180),
+    fileToken: clean(item.file_token, 200),
+    url: clean(item.tmp_url, 2000)
+  })).filter((item) => item.name || item.fileToken || item.url);
 }
 
 async function createRecord(env, tableId, fields) {

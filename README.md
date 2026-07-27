@@ -25,7 +25,7 @@
 
 双击打开 `index.html` 可以预览页面，本机签到记录会保存在浏览器中；如果要启用跨设备同步，请把整个 `link-checkin` 文件夹部署到 HTTPS 静态网页空间（例如 GitHub Pages）。直接使用 `file://` 预览时，云端接口会受到浏览器来源限制，这是预期行为。
 
-管理员打开 `admin.html` 发布链接；其他人打开 `index.html`，在页面上方填写一次姓名，然后点击“打开链接”查看内容，再点击对应的“确定签到”。每个链接不再重复填写姓名。
+管理员打开 `admin.html` 发布链接；其他人打开 `index.html`，在页面上方填写一次姓名，然后点击“打开链接”查看内容，再点击对应的“确定签到”。截图上传为可选项，每个链接不再重复填写姓名。
 
 生成后的链接列表和签到记录会保存在当前浏览器中，下次打开页面仍会保留。
 
@@ -39,7 +39,7 @@
 2. 将本项目更新后的 `cloudfunctions/trackEvent` 上传并部署，并为它开启 HTTP 访问/HTTP 触发器。
 3. 在该云函数的环境变量中配置：
    - `ADMIN_PASSWORD`：管理员端使用的密码；
-   - `ALLOWED_ORIGIN`：`https://cdwlxk1.github.io`。
+   - `ALLOWED_ORIGIN`：`https://nedvision.cn`。
 4. 复制云函数的 HTTP 访问地址，填写到 `link-checkin/cloud-config.js` 的 `apiUrl`：
 
 ```js
@@ -52,7 +52,7 @@ window.LINK_HUB_CONFIG = Object.freeze({
 5. 在 CloudBase 的安全来源/安全域名中加入 `https://cdwlxk1.github.io`。
 6. 把 `link-checkin` 目录中的 `cloud-config.js`、`index.html`、`app.js`、`admin.html`、`admin.js`、`styles.css` 上传到 GitHub 仓库根目录。
 
-部署后，公共端是 `https://cdwlxk1.github.io/nedlx/`，管理端是 `https://cdwlxk1.github.io/nedlx/admin.html`。管理端输入 `ADMIN_PASSWORD` 后，可以发布链接并查看云端签到记录。
+部署后，公共端是 `https://nedvision.cn/`，管理端是 `https://nedvision.cn/admin.html`。管理端输入 `ADMIN_PASSWORD` 后，可以发布链接并查看云端签到记录。
 
 当前网页端用浏览器生成的 `visitorId` 识别一次访问设备，姓名来自用户填写，不等同于微信实名认证身份。如需网页端微信登录，还需要另外配置网页授权。
 
@@ -62,4 +62,4 @@ CloudBase 网页调用需要配置安全来源；相关说明见[网页 SDK 初�
 
 网页端现在已经预留飞书 Worker 接口。请阅读 [FEISHU_SETUP.md](FEISHU_SETUP.md)，创建飞书应用和多维表格后，将 `feishu-worker.js` 部署到 Worker，并在 `cloud-config.js` 中填写 Worker 地址。
 
-飞书 App Secret 只能配置在 Worker 的服务端环境变量中，不能上传到 GitHub。部署完成后，管理员页面发布的链接和用户签到记录会保存到飞书多维表格。
+飞书 App Secret 只能配置在 Worker 的服务端环境变量中，不能上传到 GitHub。部署完成后，管理员页面发布的链接和用户签到记录会保存到飞书多维表格；用户选择上传截图时，截图会写入 `checkins` 表的“截图”附件字段。

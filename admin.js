@@ -13,6 +13,7 @@
 
   const input = document.querySelector("#admin-link-input");
   const feedback = document.querySelector("#publish-feedback");
+  const publishButton = document.querySelector("#publish-button");
   let links = loadLinks();
   let adminPassword = "";
   let cloudRecords = { checkins: [], events: [] };
@@ -21,34 +22,38 @@
   render();
   if (API_URL) loadCloudLinks();
 
-  document.querySelector("#publish-button").addEventListener("click", async () => {
-    const result = parseLinks(input.value);
-    if (!result.urls.length) {
-      setFeedback("没有识别到有效的 http 或 https 链接。", "error");
-      return;
-    }
+  publishButton.addEventListener("click", async () => {
+    if (publishButton.disabled) return;
+    publishButton.disabled = true;
+    publishButton.textContent = "发布中…";
+    setFeedback("正在发布链接，请稍候…", "");
 
-    const nextLinks = result.urls.slice(0, MAX_LINKS).map((url, index) => createLink(url, index));
-    if (API_URL) {
-      adminPassword = document.querySelector("#admin-password").value;
-      if (!adminPassword) { setFeedback("请输入管理员密码。", "error"); return; }
-      try {
+    try {
+      const result = parseLinks(input.value);
+      if (!result.urls.length) throw new Error("没有识别到有效的 http 或 https 链接。");
+
+      const nextLinks = result.urls.slice(0, MAX_LINKS).map((url, index) => createLink(url, index));
+      if (API_URL) {
+        adminPassword = document.querySelector("#admin-password").value;
+        if (!adminPassword) throw new Error("请输入管理员密码。");
         const response = await callApi({ action: "publishLinks", adminPassword, links: nextLinks });
         links = sanitizeLinks(response.links || nextLinks);
         await loadCloudRecords();
         render();
-      } catch (error) {
-        setFeedback(`发布失败：${error.message}`, "error");
-        return;
+      } else {
+        links = nextLinks;
+        saveLinks();
+        render();
       }
-    } else {
-      links = nextLinks;
-      saveLinks();
-      render();
+      const extra = result.urls.length > MAX_LINKS ? `，已取前 ${MAX_LINKS} 个` : "";
+      const invalid = result.invalidCount ? `，忽略 ${result.invalidCount} 个无效内容` : "";
+      setFeedback(`发布成功：已发布 ${links.length} 个链接${extra}${invalid}。`, "success");
+    } catch (error) {
+      setFeedback(`发布失败：${error.message}`, "error");
+    } finally {
+      publishButton.disabled = false;
+      publishButton.textContent = "发布到公共端";
     }
-    const extra = result.urls.length > MAX_LINKS ? `，已取前 ${MAX_LINKS} 个` : "";
-    const invalid = result.invalidCount ? `，忽略 ${result.invalidCount} 个无效内容` : "";
-    setFeedback(`已发布 ${links.length} 个链接${extra}${invalid}。`, "success");
   });
 
   document.querySelector("#refresh-records-button").addEventListener("click", async () => {
@@ -147,13 +152,14 @@
     recordList.replaceChildren();
     const localRecords = loadRecords();
     const entries = API_URL
-      ? cloudRecords.checkins.map((record) => ({ link: links.find((item) => item.id === record.linkId) || { title: record.linkTitle || "已删除链接" }, record: { name: record.name, signedAt: record.checkedAt || record.time } }))
+      ? cloudRecords.checkins.map((record) => ({ link: links.find((item) => item.id === record.linkId) || { title: record.linkTitle || "已删除链接" }, record: { name: record.name, signedAt: record.checkedAt || record.time, screenshot: record.screenshot || [] } }))
       : links.flatMap((link) => localRecords[link.id] && localRecords[link.id].name ? [{ link, record: localRecords[link.id] }] : []);
     if (!entries.length) { recordList.textContent = API_URL ? "暂无云端签到记录，或请先输入管理员密码刷新。" : "暂无本机签到记录。"; return; }
     entries.forEach(({ link, record }) => {
       const item = document.createElement("div");
       item.className = "record-item";
-      item.innerHTML = `<strong>${escapeHtml(record.name)}</strong><span>${escapeHtml(link.title)} · ${formatTime(record.signedAt)}</span>`;
+      const screenshotText = Array.isArray(record.screenshot) && record.screenshot.length ? ` · 截图：${record.screenshot.map((file) => file.name).filter(Boolean).join("、") || "已上传"}` : "";
+      item.innerHTML = `<strong>${escapeHtml(record.name)}</strong><span>${escapeHtml(link.title)} · ${formatTime(record.signedAt)}${escapeHtml(screenshotText)}</span>`;
       recordList.appendChild(item);
     });
   }

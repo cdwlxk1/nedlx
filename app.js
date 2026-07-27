@@ -17,6 +17,7 @@
   ];
 
   const MAX_LINKS = 6;
+  const MAX_SCREENSHOT_BYTES = 10 * 1024 * 1024;
   const CONFIG = window.LINK_HUB_CONFIG || {};
   const API_URL = typeof CONFIG.apiUrl === "string" ? CONFIG.apiUrl.trim() : "";
   const RECORDS_STORAGE_KEY = "link-checkin-records-v1";
@@ -24,6 +25,8 @@
   const NAME_STORAGE_KEY = "link-checkin-visitor-name-v1";
   const VISITOR_ID_KEY = "link-checkin-visitor-id-v1";
   const state = loadRecords();
+  const attentionIds = new Set();
+  const screenshotFiles = new Map();
   let links = loadLinks();
   let visitorName = loadVisitorName();
   const list = document.querySelector("#link-list");
@@ -31,10 +34,14 @@
   const visitorNameInput = document.querySelector("#visitor-name");
   const saveNameButton = document.querySelector("#save-name-button");
   const nameFeedback = document.querySelector("#name-feedback");
+  const submitAllButton = document.querySelector("#submit-all-button");
+  const submitFeedback = document.querySelector("#submit-feedback");
 
   refreshNameForm();
   renderLinks();
   if (API_URL) syncLinksFromCloud();
+
+  submitAllButton.addEventListener("click", submitAllCheckins);
 
   saveNameButton.addEventListener("click", () => {
     if (visitorNameInput.disabled) {
@@ -82,9 +89,18 @@
     }
   }
 
-  async function callApi(payload) {
+  async function callApi(payload, file) {
     if (!API_URL) return { local: true };
-    const response = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    let options;
+    if (file) {
+      const formData = new FormData();
+      Object.entries(payload).forEach(([key, value]) => formData.append(key, String(value ?? "")));
+      formData.append("screenshot", file, file.name || "checkin-screenshot.png");
+      options = { method: "POST", body: formData };
+    } else {
+      options = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) };
+    }
+    const response = await fetch(API_URL, options);
     const text = await response.text();
     let result = {};
     try { result = text ? JSON.parse(text) : {}; } catch (error) { throw new Error("云端返回格式错误"); }
@@ -258,8 +274,10 @@
     const fragment = template.content.cloneNode(true);
     const card = fragment.querySelector(".link-card");
     const openButton = fragment.querySelector(".open-link-button");
-    const confirmButton = fragment.querySelector(".confirm-button");
-
+    const screenshotInput = fragment.querySelector(".screenshot-input");
+    const screenshotPreview = fragment.querySelector(".screenshot-preview");
+    const screenshotPreviewImage = fragment.querySelector(".screenshot-preview-image");
+    const screenshotFileName = fragment.querySelector(".screenshot-file-name");
     card.dataset.linkId = link.id;
     fragment.querySelector(".card-index").textContent = String(index + 1).padStart(2, "0");
     fragment.querySelector(".card-title").textContent = link.title;
@@ -268,44 +286,46 @@
     openButton.href = link.url;
     openButton.setAttribute("aria-label", `打开${link.title}`);
 
+    if (screenshotInput) {
+      screenshotInput.addEventListener("change", () => {
+        const file = screenshotInput.files && screenshotInput.files[0];
+        if (!file) {
+          screenshotFiles.delete(link.id);
+          if (screenshotPreview) screenshotPreview.hidden = true;
+          if (screenshotPreviewImage) screenshotPreviewImage.removeAttribute("src");
+          if (screenshotFileName) screenshotFileName.textContent = "";
+          return;
+        }
+        if (!file.type.startsWith("image/")) {
+          screenshotInput.value = "";
+          screenshotFiles.delete(link.id);
+          if (screenshotPreview) screenshotPreview.hidden = true;
+          setFeedback(card.querySelector(".feedback"), "请选择图片格式的截图。", "error");
+          return;
+        }
+        if (file.size === 0 || file.size > MAX_SCREENSHOT_BYTES) {
+          screenshotInput.value = "";
+          screenshotFiles.delete(link.id);
+          if (screenshotPreview) screenshotPreview.hidden = true;
+          setFeedback(card.querySelector(".feedback"), "截图不能为空，且图片大小不能超过 10MB。", "error");
+          return;
+        }
+        screenshotFiles.set(link.id, file);
+        if (screenshotFileName) screenshotFileName.textContent = `${file.name}（${formatFileSize(file.size)}）`;
+        if (screenshotPreviewImage) screenshotPreviewImage.src = URL.createObjectURL(file);
+        if (screenshotPreview) screenshotPreview.hidden = false;
+        setFeedback(card.querySelector(".feedback"), "截图已选择，点击页面下方“提交签到”即可上传。", "");
+      });
+    }
+
     openButton.addEventListener("click", () => {
       const record = getRecord(link.id);
       state[link.id] = { ...record, viewed: true };
+      attentionIds.delete(link.id);
       saveRecords();
       refreshCard(link.id);
       updateSummary();
       if (API_URL) callApi({ action: "open", visitorId: getVisitorId(), name: visitorName, linkId: link.id, linkTitle: link.title, linkUrl: link.url }).catch(() => {});
-    });
-
-    confirmButton.addEventListener("click", async () => {
-      const record = getRecord(link.id);
-      const feedback = card.querySelector(".feedback");
-
-      if (!record.viewed) {
-        setFeedback(feedback, "请先点击“打开链接”查看内容，再进行签到。", "error");
-        return;
-      }
-      if (!visitorName) {
-        setFeedback(feedback, "请先在页面上方填写姓名。", "error");
-        visitorNameInput.focus();
-        return;
-      }
-
-      confirmButton.disabled = true;
-      try {
-        if (API_URL) {
-          const response = await callApi({ action: "checkin", visitorId: getVisitorId(), name: visitorName, linkId: link.id, linkTitle: link.title, linkUrl: link.url });
-          if (response.status !== "checked-in") throw new Error("云端没有确认签到");
-        }
-        state[link.id] = { ...record, name: visitorName, signedAt: new Date().toISOString() };
-        saveRecords();
-        refreshCard(link.id);
-        updateSummary();
-      } catch (error) {
-        setFeedback(feedback, `签到失败：${error.message}`, "error");
-      } finally {
-        confirmButton.disabled = false;
-      }
     });
 
     list.appendChild(fragment);
@@ -327,18 +347,19 @@
 
     card.classList.toggle("is-viewed", Boolean(record.viewed));
     card.classList.toggle("is-signed", Boolean(record.name));
+    card.classList.toggle("needs-attention", attentionIds.has(id));
 
     if (record.name) {
       status.textContent = "已签到";
-      card.querySelector(".confirm-button").textContent = "已确定";
       setFeedback(feedback, `已记录：${record.name}`, "success");
     } else if (record.viewed) {
       status.textContent = "待签到";
-      card.querySelector(".confirm-button").textContent = "确定签到";
       setFeedback(feedback, "已打开链接，请填写姓名完成签到。", "");
+    } else if (attentionIds.has(id)) {
+      status.textContent = "请先打开";
+      setFeedback(feedback, "请先打开这个链接后再提交。", "error");
     } else {
       status.textContent = "未查看";
-      card.querySelector(".confirm-button").textContent = "确定签到";
       setFeedback(feedback, "", "");
     }
   }
@@ -351,6 +372,71 @@
   function setGeneratorFeedback(element, message, type) {
     element.textContent = message;
     element.className = `generator-feedback${type ? ` ${type}` : ""}`;
+  }
+
+  async function submitAllCheckins() {
+    if (submitAllButton.disabled) return;
+
+    const unopenedLinks = links.filter((link) => !getRecord(link.id).viewed);
+    attentionIds.clear();
+    unopenedLinks.forEach((link) => attentionIds.add(link.id));
+    links.forEach((link) => refreshCard(link.id));
+
+    if (unopenedLinks.length) {
+      setSubmitFeedback(`还有 ${unopenedLinks.length} 个链接未打开，请先打开红色标记的链接。`, "error");
+      const firstCard = list.querySelector(`[data-link-id="${CSS.escape(unopenedLinks[0].id)}"]`);
+      firstCard?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    if (!visitorName) {
+      setSubmitFeedback("请先在页面上方填写姓名。", "error");
+      visitorNameInput.focus();
+      return;
+    }
+
+    const pendingLinks = links.filter((link) => !getRecord(link.id).name);
+    if (!pendingLinks.length) {
+      setSubmitFeedback("所有链接已经完成签到。", "success");
+      submitAllButton.disabled = true;
+      submitAllButton.textContent = "已完成签到";
+      return;
+    }
+
+    submitAllButton.disabled = true;
+    submitAllButton.textContent = "提交中…";
+    setSubmitFeedback("正在提交签到，请稍候。", "");
+    try {
+      for (const link of pendingLinks) {
+        const screenshotFile = screenshotFiles.get(link.id) || null;
+        if (API_URL) {
+          const response = await callApi({ action: "checkin", visitorId: getVisitorId(), name: visitorName, linkId: link.id, linkTitle: link.title, linkUrl: link.url }, screenshotFile);
+          if (response.status !== "checked-in") throw new Error(`${link.title}没有完成签到`);
+        }
+        const record = getRecord(link.id);
+        state[link.id] = { ...record, name: visitorName, signedAt: new Date().toISOString(), screenshotName: screenshotFile ? screenshotFile.name : "" };
+        refreshCard(link.id);
+      }
+      saveRecords();
+      updateSummary();
+      setSubmitFeedback(`已成功提交 ${pendingLinks.length} 个链接的签到。`, "success");
+      submitAllButton.textContent = "已完成签到";
+    } catch (error) {
+      setSubmitFeedback(`提交失败：${error.message}`, "error");
+      submitAllButton.disabled = false;
+      submitAllButton.textContent = "重新提交签到";
+    }
+  }
+
+  function setSubmitFeedback(message, type) {
+    submitFeedback.textContent = message;
+    submitFeedback.className = `submit-feedback${type ? ` ${type}` : ""}`;
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
   }
 
   function updateSummary() {
