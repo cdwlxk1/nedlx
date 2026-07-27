@@ -27,6 +27,9 @@ body {
 button, input { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 .page-shell { width: min(calc(100% - 40px), 920px); margin: 0 auto; padding: 68px 0 44px; }
+.brand-logo { display: inline-flex; align-items: center; margin-bottom: 28px; line-height: 0; text-decoration: none; }
+.brand-logo img { display: block; width: min(170px, 44vw); height: auto; }
+.brand-logo:focus-visible { outline: 3px solid rgba(8, 127, 120, 0.28); outline-offset: 5px; border-radius: 4px; }
 .hero { position: relative; display: flex; justify-content: space-between; gap: 32px; align-items: flex-start; margin-bottom: 32px; }
 .hero-copy { min-width: 0; max-width: 650px; }
 .eyebrow { margin: 0 0 15px; color: var(--teal); font-size: 12px; font-weight: 800; letter-spacing: 0.2em; }
@@ -125,6 +128,8 @@ h1 { margin-bottom: 14px; font-size: clamp(32px, 5vw, 54px); line-height: 1.12; 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (max-width: 680px) {
   .page-shell { width: min(calc(100% - 28px), 560px); padding-top: 40px; }
+  .brand-logo { margin-bottom: 22px; }
+  .brand-logo img { width: 140px; }
   .hero { gap: 14px; }
   .hero-mark { flex-basis: 56px; width: 56px; height: 56px; transform: scale(0.72) rotate(-20deg); transform-origin: top right; }
   h1 { font-size: clamp(31px, 9vw, 43px); }
