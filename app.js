@@ -18,6 +18,7 @@
 
   const MAX_LINKS = 6;
   const MAX_SCREENSHOT_BYTES = 10 * 1024 * 1024;
+  const API_TIMEOUT_MS = 30000;
   const CONFIG = window.LINK_HUB_CONFIG || {};
   const API_URL = typeof CONFIG.apiUrl === "string" ? CONFIG.apiUrl.trim() : "";
   const RECORDS_STORAGE_KEY = "link-checkin-records-v1";
@@ -101,10 +102,17 @@
       options = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) };
     }
     let response;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
     try {
-      response = await fetch(API_URL, options);
+      response = await fetch(API_URL, { ...options, signal: controller.signal });
     } catch (error) {
+      if (error && error.name === "AbortError") {
+        throw new Error("云端接口响应超时（30秒），请检查飞书配置后重新提交。");
+      }
       throw new Error("无法连接云端接口，请检查 Worker 地址、ALLOWED_ORIGIN 配置，或不要直接用 file:/// 打开网页。");
+    } finally {
+      window.clearTimeout(timeoutId);
     }
     const text = await response.text();
     let result = {};

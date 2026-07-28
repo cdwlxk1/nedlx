@@ -1,5 +1,6 @@
 const FEISHU_API_BASE = "https://open.feishu.cn/open-apis";
 const MAX_LINKS = 6;
+const FEISHU_REQUEST_TIMEOUT_MS = 20000;
 
 const DEFAULT_LINKS = [
   { id: "video-1", title: "视频号内容", description: "打开视频号链接，查看内容后完成签到。", url: "https://weixin.qq.com/sph/AQk4HX6E6v" },
@@ -169,8 +170,7 @@ async function replaceLinks(links, env) {
 }
 
 async function getTenantAccessToken(env) {
-  const response = await fetch(`${FEISHU_API_BASE}/auth/v3/tenant_access_token/internal`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ app_id: env.FEISHU_APP_ID, app_secret: env.FEISHU_APP_SECRET }) });
-  const result = await response.json();
+  const { response, result } = await fetchFeishuJson(`${FEISHU_API_BASE}/auth/v3/tenant_access_token/internal`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ app_id: env.FEISHU_APP_ID, app_secret: env.FEISHU_APP_SECRET }) });
   if (!response.ok || result.code !== 0 || !result.tenant_access_token) throw httpError(500, `飞书鉴权失败：${result.msg || response.status}`);
   return result.tenant_access_token;
 }
@@ -178,22 +178,41 @@ async function getTenantAccessToken(env) {
 async function feishuRequest(env, path, options = {}) {
   const token = await getTenantAccessToken(env);
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(options.headers || {}) };
-  const response = await fetch(`${FEISHU_API_BASE}${path}`, { ...options, headers });
-  const result = await response.json();
+  const { response, result } = await fetchFeishuJson(`${FEISHU_API_BASE}${path}`, { ...options, headers });
   if (!response.ok || result.code !== 0) throw httpError(500, `飞书接口失败：${result.msg || response.status}`);
   return result;
 }
 
 async function feishuMultipartRequest(env, path, formData) {
   const token = await getTenantAccessToken(env);
-  const response = await fetch(`${FEISHU_API_BASE}${path}`, {
+  const { response, result } = await fetchFeishuJson(`${FEISHU_API_BASE}${path}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: formData
   });
-  const result = await response.json();
   if (!response.ok || result.code !== 0) throw httpError(500, `飞书附件上传失败：${result.msg || response.status}`);
   return result;
+}
+
+async function fetchFeishuJson(url, options = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FEISHU_REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    const text = await response.text();
+    let result = {};
+    try {
+      result = text ? JSON.parse(text) : {};
+    } catch (error) {
+      throw httpError(502, "飞书返回格式异常");
+    }
+    return { response, result };
+  } catch (error) {
+    if (error && error.name === "AbortError") throw httpError(504, "飞书接口响应超时，请稍后重试");
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function validateScreenshot(file) {
