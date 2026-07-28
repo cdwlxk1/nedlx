@@ -102,17 +102,17 @@
       options = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) };
     }
     let response;
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+    const controller = typeof AbortController === "function" ? new AbortController() : null;
+    const timeoutId = controller ? window.setTimeout(() => controller.abort(), API_TIMEOUT_MS) : 0;
     try {
-      response = await fetch(API_URL, { ...options, signal: controller.signal });
+      response = await fetch(API_URL, controller ? { ...options, signal: controller.signal } : options);
     } catch (error) {
       if (error && error.name === "AbortError") {
         throw new Error("云端接口响应超时（30秒），请检查飞书配置后重新提交。");
       }
       throw new Error("无法连接云端接口，请检查 Worker 地址、ALLOWED_ORIGIN 配置，或不要直接用 file:/// 打开网页。");
     } finally {
-      window.clearTimeout(timeoutId);
+      if (timeoutId) window.clearTimeout(timeoutId);
     }
     const text = await response.text();
     let result = {};
