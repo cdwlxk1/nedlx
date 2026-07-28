@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="5米视力表视标尺寸计算工具" />
+  <title>5米视力表 · 视标尺寸计算</title>
+  <style>
+    :root {
+      --bg: #f3f8f7;
+      --panel: #ffffff;
+      --panel-soft: #eef7f5;
+      --ink: #172b35;
+      --muted: #637985;
+      --teal: #087f7b;
+      --teal-dark: #075e5c;
+      --gold: #bd8a2e;
+      --line: #d7e7e4;
+      --danger: #b33b3b;
+      --shadow: 0 14px 40px rgba(23, 68, 73, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 90% 0%, rgba(8, 127, 123, 0.10), transparent 34%),
+        var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+
+    .page { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 56px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 26px; }
+    .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .brand img { width: 92px; height: auto; display: block; }
+    .brand-title { font-weight: 800; font-size: clamp(18px, 2.5vw, 28px); letter-spacing: 0.02em; }
+    .back-link { color: var(--teal-dark); text-decoration: none; font-weight: 700; white-space: nowrap; }
+    .back-link:hover { text-decoration: underline; }
+
+    .hero { margin-bottom: 24px; }
+    .eyebrow { margin: 0 0 10px; color: var(--teal); font-size: 13px; font-weight: 800; letter-spacing: 0.22em; }
+    h1 { margin: 0; font-size: clamp(32px, 6vw, 62px); line-height: 1.06; letter-spacing: -0.04em; }
+    .hero p { max-width: 780px; margin: 16px 0 0; color: var(--muted); font-size: clamp(16px, 2vw, 20px); line-height: 1.7; }
+
+    .layout { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); gap: 18px; align-items: start; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); padding: 24px; }
+    .card h2 { margin: 0 0 18px; font-size: 22px; }
+    .card h3 { margin: 24px 0 10px; font-size: 17px; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .field { display: grid; gap: 7px; }
+    .field.full { grid-column: 1 / -1; }
+    label { color: var(--muted); font-size: 13px; font-weight: 700; }
+    input, select {
+      width: 100%;
+      min-height: 43px;
+      border: 1px solid #cbdeda;
+      border-radius: 11px;
+      padding: 9px 11px;
+      color: var(--ink);
+      background: #fbfefd;
+      font: inherit;
+      font-size: 15px;
+    }
+    input:focus, select:focus { outline: 3px solid rgba(8, 127, 123, 0.14); border-color: var(--teal); }
+    input[readonly] { background: #f1f6f5; color: var(--muted); }
+    .unit { position: relative; }
+    .unit input { padding-right: 42px; }
+    .unit span { position: absolute; right: 12px; top: 12px; color: var(--muted); font-size: 13px; }
+    .hint { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .button-row { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+    button {
+      border: 0;
+      border-radius: 11px;
+      padding: 11px 15px;
+      cursor: pointer;
+      color: white;
+      background: var(--teal);
+      font: inherit;
+      font-weight: 800;
+    }
+    button:hover { background: var(--teal-dark); }
+    button.secondary { color: var(--teal-dark); background: var(--panel-soft); border: 1px solid var(--line); }
+    button.secondary:hover { background: #e2f0ed; }
+
+    .formula { margin-top: 20px; padding: 15px; border-radius: 14px; background: #fff9eb; border: 1px solid #f0dfb5; color: #70521b; line-height: 1.7; font-size: 13px; }
+    .formula strong { color: #4d3712; }
+    .result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+    .metric { padding: 14px; border-radius: 14px; background: var(--panel-soft); border: 1px solid var(--line); }
+    .metric-label { color: var(--muted); font-size: 12px; }
+    .metric-value { margin-top: 5px; color: var(--teal-dark); font-size: 24px; font-weight: 850; }
+    .metric-note { margin-top: 3px; color: var(--muted); font-size: 11px; }
+
+    .chart-stage {
+      min-height: 340px;
+      margin-top: 18px;
+      border: 1px dashed #a9cbc5;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: #fff;
+    }
+    .chart-inner { display: grid; justify-items: center; gap: 16px; padding: 28px; }
+    .optotype { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); background: transparent; }
+    .optotype span { display: block; }
+    .optotype span.on { background: #111c22; }
+    .preview-label { color: var(--muted); font-size: 13px; text-align: center; }
+    .font-preview { line-height: 1; font-family: Arial, Helvetica, sans-serif; font-weight: 700; color: #111c22; }
+    .calibration { margin-top: 16px; padding: 14px; border-radius: 14px; background: #f8faf9; border: 1px solid var(--line); }
+    .calibration-line { height: 2px; background: var(--teal); margin: 10px 0 5px; width: 50mm; max-width: 100%; }
+    .calibration-note { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .warning { color: var(--danger); }
+    .footer-note { margin-top: 18px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+
+    @media (max-width: 820px) {
+      .page { width: min(100% - 22px, 680px); padding-top: 18px; }
+      .topbar { align-items: flex-start; }
+      .brand img { width: 76px; }
+      .layout { grid-template-columns: 1fr; }
+      .card { padding: 18px; border-radius: 18px; }
+      .chart-stage { min-height: 270px; }
+    }
+    @media (max-width: 430px) {
+      .field-grid, .result-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      h1 { font-size: 38px; }
+      .brand-title { font-size: 17px; }
+      .back-link { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <nav class="topbar" aria-label="页面导航">
+      <div class="brand">
+        <img src="nedlogo.png" alt="NEDLX 耐德佳" />
+        <span class="brand-title">5米视力表尺寸计算</span>
+      </div>
+      <a class="back-link" href="index.html">返回工具首页 ↗</a>
+    </nav>
+
+    <header class="hero">
+      <p class="eyebrow">VISUAL ACUITY CALCULATOR</p>
+      <h1>视力 1.0，屏幕上应该多大？</h1>
+      <p>选择终端尺寸、分辨率和观察距离，计算标准 5 米视力表的视标大小，并在当前屏幕上显示可校准的 E 视标。</p>
+    </header>
+
+    <section class="layout">
+      <div class="card">
+        <h2>输入终端参数</h2>
+        <div class="field-grid">
+          <div class="field full">
+            <label for="preset">终端预设</label>
+            <select id="preset">
+              <option value="custom">自定义终端</option>
+              <option value="iphone61">手机 6.1 英寸 · 1170×2532</option>
+              <option value="iphone67">手机 6.7 英寸 · 1290×2796</option>
+              <option value="tablet11">平板 11 英寸 · 1668×2388</option>
+              <option value="laptop133">笔记本 13.3 英寸 · 2560×1600</option>
+              <option value="desktop24">显示器 24 英寸 · 1920×1080</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="distance">观察距离</label>
+            <div class="unit"><input id="distance" type="number" min="0.1" step="0.1" value="5" /><span>m</span></div>
+          </div>
+          <div class="field">
+            <label for="acuity">目标视力</label>
+            <div class="unit"><input id="acuity" type="number" min="0.1" max="2" step="0.1" value="1.0" /><span>倍</span></div>
+          </div>
+          <div class="field">
+            <label for="screen-width">屏幕实际宽度</label>
+            <div class="unit"><input id="screen-width" type="number" min="20" step="0.1" value="71.8" /><span>mm</span></div>
+          </div>
+          <div class="field">
+            <label for="screen-height">屏幕实际高度</label>
+            <div class="unit"><input id="screen-height" type="number" min="20" step="0.1" value="155.6" /><span>mm</span></div>
+          </div>
+          <div class="field">
+            <label for="pixel-width">屏幕横向分辨率</label>
+            <div class="unit"><input id="pixel-width" type="number" min="100" step="1" value="1170" /><span>px</span></div>
+          </div>
+          <div class="field">
+            <label for="pixel-height">屏幕纵向分辨率</label>
+            <div class="unit"><input id="pixel-height" type="number" min="100" step="1" value="2532" /><span>px</span></div>
+          </div>
+          <div class="field full">
+            <label for="viewport-width">当前网页 CSS 视口宽度</label>
+            <div class="unit"><input id="viewport-width" type="number" min="200" step="1" readonly /><span>CSS px</span></div>
+            <p class="hint">网页会自动读取当前浏览器视口宽度，不等于手机的物理像素宽度。</p>
+          </div>
+          <div class="field full">
+            <label for="calibration">校准倍率</label>
+            <div class="unit"><input id="calibration" type="number" min="0.5" max="2" step="0.01" value="1" /><span>×</span></div>
+            <p class="hint">默认 1.00。若用尺子测量页面上的 50 mm 校准线不准确，可调整此倍率。</p>
+          </div>
+        </div>
+        <div class="button-row">
+          <button id="use-viewport" type="button">重新读取当前屏幕</button>
+          <button id="reset" class="secondary" type="button">恢复默认</button>
+        </div>
+        <div class="formula">
+          <strong>计算说明</strong><br />
+          视力 1.0 的标准视标总高为 5′，笔画宽度为 1′。因此在 5 米处，1′约为 1.45 mm，视标总高约为 7.27 mm。
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>计算结果与视标预览</h2>
+        <div class="result-grid">
+          <div class="metric"><div class="metric-label">1′对应实际长度</div><div id="one-arcmin" class="metric-value">—</div><div class="metric-note">观察距离处</div></div>
+          <div class="metric"><div class="metric-label">视标总高度</div><div id="optotype-mm" class="metric-value">—</div><div class="metric-note">标准总高 5′</div></div>
+          <div class="metric"><div class="metric-label">参考 CSS 字号</div><div id="css-size" class="metric-value">—</div><div class="metric-note">用于当前网页视口</div></div>
+          <div class="metric"><div class="metric-label">屏幕物理像素</div><div id="pixel-size" class="metric-value">—</div><div class="metric-note">按屏幕实际宽度换算</div></div>
+        </div>
+
+        <div class="chart-stage" aria-live="polite">
+          <div class="chart-inner">
+            <div id="optotype" class="optotype" role="img" aria-label="视力表 E 视标"></div>
+            <div class="preview-label">视力 <strong id="preview-acuity">1.0</strong> · E 视标总高 <strong id="preview-mm">—</strong></div>
+            <div id="font-preview" class="font-preview">E</div>
+          </div>
+        </div>
+
+        <div class="calibration">
+          <div><strong>50 mm 屏幕校准线</strong></div>
+          <div class="calibration-line" aria-hidden="true"></div>
+          <p class="calibration-note">用直尺测量这条线。如果实际不是 50 mm，修改左侧“校准倍率”，直到测量接近 50 mm。</p>
+        </div>
+        <p id="status" class="footer-note"></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const presets = {
+        iphone61: { width: 71.8, height: 155.6, pxWidth: 1170, pxHeight: 2532 },
+        iphone67: { width: 77.4, height: 167.7, pxWidth: 1290, pxHeight: 2796 },
+        tablet11: { width: 160.1, height: 229.5, pxWidth: 1668, pxHeight: 2388 },
+        laptop133: { width: 286.0, height: 179.0, pxWidth: 2560, pxHeight: 1600 },
+        desktop24: { width: 531.0, height: 299.0, pxWidth: 1920, pxHeight: 1080 }
+      };
+      const ids = ["preset", "distance", "acuity", "screen-width", "screen-height", "pixel-width", "pixel-height", "viewport-width", "calibration"];
+      const els = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
+      const output = {
+        oneArcmin: document.getElementById("one-arcmin"),
+        optotypeMm: document.getElementById("optotype-mm"),
+        cssSize: document.getElementById("css-size"),
+        pixelSize: document.getElementById("pixel-size"),
+        previewAcuity: document.getElementById("preview-acuity"),
+        previewMm: document.getElementById("preview-mm"),
+        optotype: document.getElementById("optotype"),
+        fontPreview: document.getElementById("font-preview"),
+        status: document.getElementById("status")
+      };
+      const ePattern = ["11111", "10000", "11110", "10000", "11111"];
+
+      function setViewportWidth() {
+        els["viewport-width"].value = String(Math.max(200, Math.round(window.innerWidth || document.documentElement.clientWidth || 390)));
+        calculate();
+      }
+
+      function setPreset() {
+        const preset = presets[els.preset.value];
+        if (!preset) return calculate();
+        els["screen-width"].value = preset.width;
+        els["screen-height"].value = preset.height;
+        els["pixel-width"].value = preset.pxWidth;
+        els["pixel-height"].value = preset.pxHeight;
+        calculate();
+      }
+
+      function number(id) { return Number(els[id].value); }
+      function fmt(value, digits = 2) { return Number.isFinite(value) ? value.toFixed(digits) : "—"; }
+
+      function calculate() {
+        const distanceM = number("distance");
+        const acuity = number("acuity");
+        const screenWidthMm = number("screen-width");
+        const pixelWidth = number("pixel-width");
+        const viewportWidth = number("viewport-width");
+        const calibration = number("calibration");
+        if (![distanceM, acuity, screenWidthMm, pixelWidth, viewportWidth, calibration].every(Number.isFinite) || distanceM <= 0 || acuity <= 0 || screenWidthMm <= 0 || pixelWidth <= 0 || viewportWidth <= 0 || calibration <= 0) {
+          output.status.textContent = "请填写有效的距离、视力和屏幕参数。";
+          output.status.className = "footer-note warning";
+          return;
+        }
+
+        const arcminRad = Math.PI / 10800;
+        const oneArcminMm = 2 * distanceM * 1000 * Math.tan(arcminRad / 2);
+        const mar = 1 / acuity;
+        const optotypeMm = oneArcminMm * 5 * mar;
+        const cssPxPerMm = viewportWidth / screenWidthMm * calibration;
+        const cssSize = optotypeMm * cssPxPerMm;
+        const physicalPx = optotypeMm * pixelWidth / screenWidthMm;
+        const strokePx = cssSize / 5;
+
+        output.oneArcmin.textContent = `${fmt(oneArcminMm, 3)} mm`;
+        output.optotypeMm.textContent = `${fmt(optotypeMm, 3)} mm`;
+        output.cssSize.textContent = `${fmt(cssSize, 1)} px`;
+        output.pixelSize.textContent = `${fmt(physicalPx, 1)} px`;
+        output.previewAcuity.textContent = acuity.toFixed(1);
+        output.previewMm.textContent = `${fmt(optotypeMm, 2)} mm`;
+        output.optotype.style.width = `${Math.max(1, cssSize)}px`;
+        output.optotype.style.height = `${Math.max(1, cssSize)}px`;
+        output.optotype.style.gridTemplateColumns = `repeat(5, ${Math.max(1, strokePx)}px)`;
+        output.optotype.style.gridTemplateRows = `repeat(5, ${Math.max(1, strokePx)}px)`;
+        output.fontPreview.style.fontSize = `${Math.max(12, cssSize)}px`;
+        output.status.textContent = `当前视口 ${Math.round(viewportWidth)} CSS px；CSS 参考字号按屏幕实际宽度 ${fmt(screenWidthMm, 1)} mm 换算。浏览器缩放请保持 100%。`;
+        output.status.className = "footer-note";
+      }
+
+      function renderOptotype() {
+        output.optotype.replaceChildren();
+        ePattern.join("").split("").forEach((bit) => {
+          const cell = document.createElement("span");
+          if (bit === "1") cell.className = "on";
+          output.optotype.appendChild(cell);
+        });
+      }
+
+      els.preset.addEventListener("change", setPreset);
+      ids.filter((id) => id !== "preset" && id !== "viewport-width").forEach((id) => els[id].addEventListener("input", calculate));
+      document.getElementById("use-viewport").addEventListener("click", setViewportWidth);
+      document.getElementById("reset").addEventListener("click", () => {
+        els.preset.value = "iphone61";
+        els.distance.value = "5";
+        els.acuity.value = "1.0";
+        els.calibration.value = "1";
+        setPreset();
+        setViewportWidth();
+      });
+      window.addEventListener("resize", setViewportWidth);
+      renderOptotype();
+      els.preset.value = "iphone61";
+      setPreset();
+      setViewportWidth();
+    })();
+  </script>
+</body>
+</html>
