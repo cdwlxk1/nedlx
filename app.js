@@ -100,7 +100,12 @@
     } else {
       options = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) };
     }
-    const response = await fetch(API_URL, options);
+    let response;
+    try {
+      response = await fetch(API_URL, options);
+    } catch (error) {
+      throw new Error("无法连接云端接口，请检查 Worker 地址、ALLOWED_ORIGIN 配置，或不要直接用 file:/// 打开网页。");
+    }
     const text = await response.text();
     let result = {};
     try { result = text ? JSON.parse(text) : {}; } catch (error) { throw new Error("云端返回格式错误"); }

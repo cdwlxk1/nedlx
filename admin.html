@@ -51,7 +51,10 @@
       <section class="summary-panel admin-records-panel" aria-labelledby="records-title">
         <div class="list-heading">
           <h2 id="records-title">本机签到记录</h2>
-          <button id="refresh-records-button" class="text-button" type="button">刷新云端记录</button>
+          <div class="record-actions">
+            <button id="export-checkins-button" class="export-button" type="button">导出签到记录</button>
+            <button id="refresh-records-button" class="text-button" type="button">刷新云端记录</button>
+          </div>
         </div>
         <div id="record-list" class="record-list"></div>
       </section>
