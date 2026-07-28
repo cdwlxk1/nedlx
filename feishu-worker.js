@@ -22,13 +22,18 @@ export default {
       const status = error.statusCode || 500;
       return json({ ok: false, error: error.message || "接口处理失败" }, status, corsHeaders);
     }
+  },
+
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(cleanupExportedCheckins(env));
   }
 };
 
 function getCorsHeaders(request, env) {
-  const configured = String(env.ALLOWED_ORIGIN || "*").trim();
+  const configured = String(env.ALLOWED_ORIGIN || "https://nedvision.cn").trim();
   const requestOrigin = request.headers.get("Origin") || "";
-  const allowOrigin = configured === "*" || configured === requestOrigin ? configured : configured;
+  const allowedOrigins = configured.split(",").map((origin) => origin.trim()).filter(Boolean);
+  const allowOrigin = allowedOrigins.includes("*") ? "*" : (allowedOrigins.includes(requestOrigin) ? requestOrigin : allowedOrigins[0] || "*");
   return {
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Headers": "Content-Type",
@@ -87,6 +92,23 @@ async function handle(request, env) {
 
   if (action === "checkin") {
     return checkinRecord(request, env);
+  }
+
+  if (action === "getCheckinsForExport") {
+    requireAdmin(request, env);
+    const rows = (await listRecords(env, env.FEISHU_CHECKINS_TABLE_ID)).filter((row) => !row.exportedAt);
+    return { status: "ready", checkins: rows };
+  }
+
+  if (action === "markCheckinsExported") {
+    requireAdmin(request, env);
+    const recordIds = Array.isArray(request.recordIds) ? request.recordIds.filter((id) => typeof id === "string").slice(0, 1000) : [];
+    if (!recordIds.length) return { status: "marked", count: 0 };
+    const idSet = new Set(recordIds);
+    const rows = (await listRecords(env, env.FEISHU_CHECKINS_TABLE_ID)).filter((row) => idSet.has(row.recordId) && !row.exportedAt);
+    const exportedAt = new Date().toISOString();
+    for (const row of rows) await updateRecord(env, env.FEISHU_CHECKINS_TABLE_ID, row.recordId, { 导出时间: exportedAt });
+    return { status: "marked", exportedAt, count: rows.length };
   }
 
   if (action === "getRecords") {
@@ -227,6 +249,7 @@ function toRow(item) {
     time: fieldText(fields.点击时间 || fields.签到时间),
     checkedAt: fieldText(fields.签到时间),
     day: fieldText(fields.日期),
+    exportedAt: fieldText(fields.导出时间),
     screenshot: fieldAttachments(fields.截图)
   };
 }
@@ -255,6 +278,15 @@ async function updateRecord(env, tableId, recordId, fields) {
 
 async function deleteRecord(env, tableId, recordId) {
   await feishuRequest(env, `/bitable/v1/apps/${env.FEISHU_APP_TOKEN}/tables/${tableId}/records/${recordId}`, { method: "DELETE" });
+}
+
+async function cleanupExportedCheckins(env) {
+  const rows = await listRecords(env, env.FEISHU_CHECKINS_TABLE_ID);
+  const exportedRows = rows.filter((row) => row.exportedAt);
+  for (const row of exportedRows) {
+    await deleteRecord(env, env.FEISHU_CHECKINS_TABLE_ID, row.recordId);
+  }
+  return { deleted: exportedRows.length };
 }
 
 function clean(value, maxLength = 200) { return typeof value === "string" ? value.trim().slice(0, maxLength) : ""; }

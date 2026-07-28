@@ -14,6 +14,7 @@
   const input = document.querySelector("#admin-link-input");
   const feedback = document.querySelector("#publish-feedback");
   const publishButton = document.querySelector("#publish-button");
+  const exportCheckinsButton = document.querySelector("#export-checkins-button");
   let links = loadLinks();
   let adminPassword = "";
   let cloudRecords = { checkins: [], events: [] };
@@ -64,6 +65,44 @@
     catch (error) { setFeedback(`读取失败：${error.message}`, "error"); }
   });
 
+  if (exportCheckinsButton) exportCheckinsButton.addEventListener("click", async () => {
+    if (exportCheckinsButton.disabled) return;
+    if (!API_URL) {
+      setFeedback("当前未连接云端，无法导出飞书签到记录。", "error");
+      return;
+    }
+    adminPassword = document.querySelector("#admin-password").value;
+    if (!adminPassword) {
+      setFeedback("请输入管理员密码后再导出记录。", "error");
+      return;
+    }
+
+    exportCheckinsButton.disabled = true;
+    exportCheckinsButton.textContent = "导出中…";
+    setFeedback("正在整理签到记录，请稍候…", "");
+    try {
+      const response = await callApi({ action: "getCheckinsForExport", adminPassword });
+      const rows = Array.isArray(response.checkins) ? response.checkins : [];
+      if (!rows.length) {
+        setFeedback("没有新的签到记录可导出。", "success");
+        return;
+      }
+      const csv = buildCheckinsCsv(rows);
+      const stamp = formatFileStamp(new Date().toISOString());
+      downloadTextFile(csv, `签到记录_${stamp}.csv`);
+      const marked = await callApi({ action: "markCheckinsExported", adminPassword, recordIds: rows.map((row) => row.recordId).filter(Boolean) });
+      if (marked.status !== "marked") throw new Error("签到记录已下载，但没有完成导出标记");
+      await loadCloudRecords();
+      render();
+      setFeedback(`导出成功：已下载 ${rows.length} 条签到记录。`, "success");
+    } catch (error) {
+      setFeedback(`导出失败：${error.message}`, "error");
+    } finally {
+      exportCheckinsButton.disabled = false;
+      exportCheckinsButton.textContent = "导出签到记录";
+    }
+  });
+
   async function loadCloudLinks() {
     try {
       const response = await callApi({ action: "getLinks" });
@@ -82,7 +121,12 @@
 
   async function callApi(payload) {
     if (!API_URL) return { local: true };
-    const response = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    let response;
+    try {
+      response = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    } catch (error) {
+      throw new Error("无法连接云端接口，请检查 Worker 地址、ALLOWED_ORIGIN 配置，或不要直接用 file:/// 打开网页。");
+    }
     const text = await response.text();
     let result = {};
     try { result = text ? JSON.parse(text) : {}; } catch (error) { throw new Error("云端返回格式错误"); }
@@ -166,6 +210,52 @@
 
   function loadRecords() {
     try { return JSON.parse(window.localStorage.getItem(RECORDS_STORAGE_KEY) || "{}"); } catch (error) { return {}; }
+  }
+
+  function buildCheckinsCsv(rows) {
+    const headers = ["访问者ID", "姓名", "链接ID", "链接标题", "链接地址", "签到时间", "日期", "截图文件", "导出时间"];
+    const lines = [headers.map(escapeCsv).join(",")];
+    rows.forEach((row) => {
+      const screenshotNames = Array.isArray(row.screenshot) ? row.screenshot.map((file) => file.name).filter(Boolean).join("、") : "";
+      const values = [
+        row.visitorId,
+        row.name,
+        row.linkId,
+        row.linkTitle,
+        row.linkUrl,
+        row.checkedAt || row.time,
+        row.day,
+        screenshotNames,
+        row.exportedAt
+      ];
+      lines.push(values.map(escapeCsv).join(","));
+    });
+    return `\uFEFF${lines.join("\r\n")}\r\n`;
+  }
+
+  function escapeCsv(value) {
+    const text = value === undefined || value === null ? "" : String(value);
+    return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
+
+  function downloadTextFile(content, fileName) {
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function formatFileStamp(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "导出";
+    const parts = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(date);
+    const get = (type) => parts.find((part) => part.type === type)?.value || "";
+    return `${get("year")}${get("month")}${get("day")}_${get("hour")}${get("minute")}`;
   }
 
   function formatTime(value) {
