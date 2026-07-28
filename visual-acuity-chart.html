@@ -87,6 +87,12 @@
 
     .formula { margin-top: 20px; padding: 15px; border-radius: 14px; background: #fff9eb; border: 1px solid #f0dfb5; color: #70521b; line-height: 1.7; font-size: 13px; }
     .formula strong { color: #4d3712; }
+    .display-box { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .display-box h3 { margin: 0 0 8px; }
+    .display-box textarea { width: 100%; min-height: 112px; resize: vertical; border: 1px solid #cbdeda; border-radius: 12px; padding: 12px; color: var(--ink); background: #fbfefd; font: inherit; font-size: 15px; line-height: 1.6; }
+    .display-box textarea:focus { outline: 3px solid rgba(8, 127, 123, 0.14); border-color: var(--teal); }
+    .display-status { min-height: 20px; margin: 9px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .display-status.warning { color: var(--danger); }
     .result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
     .metric { padding: 14px; border-radius: 14px; background: var(--panel-soft); border: 1px solid var(--line); }
     .metric-label { color: var(--muted); font-size: 12px; }
@@ -206,6 +212,15 @@
           <strong>计算说明</strong><br />
           视力 1.0 的标准视标总高为 5′，笔画宽度为 1′。因此在 5 米处，1′约为 1.45 mm，视标总高约为 7.27 mm。
         </div>
+        <div class="display-box">
+          <h3>全屏显示自定义文字</h3>
+          <p class="hint">输入文字后点击确定，系统会按上面的计算字号打开新的全屏展示页；文字过多时可上下滚动。</p>
+          <textarea id="display-text" maxlength="2000" placeholder="例如：请辨认这段文字，或输入需要展示的视标内容。"></textarea>
+          <div class="button-row">
+            <button id="open-display" type="button">确定并全屏显示</button>
+          </div>
+          <p id="display-status" class="display-status" role="status"></p>
+        </div>
       </div>
 
       <div class="card">
@@ -257,6 +272,8 @@
         fontPreview: document.getElementById("font-preview"),
         status: document.getElementById("status")
       };
+      const displayText = document.getElementById("display-text");
+      const displayStatus = document.getElementById("display-status");
       const ePattern = ["11111", "10000", "11110", "10000", "11111"];
 
       function setViewportWidth() {
@@ -314,6 +331,49 @@
         output.status.className = "footer-note";
       }
 
+      function getCalculatedCssSize() {
+        const distanceM = number("distance");
+        const acuity = number("acuity");
+        const screenWidthMm = number("screen-width");
+        const viewportWidth = number("viewport-width");
+        const calibration = number("calibration");
+        if (![distanceM, acuity, screenWidthMm, viewportWidth, calibration].every(Number.isFinite) || distanceM <= 0 || acuity <= 0 || screenWidthMm <= 0 || viewportWidth <= 0 || calibration <= 0) return null;
+        const arcminRad = Math.PI / 10800;
+        const oneArcminMm = 2 * distanceM * 1000 * Math.tan(arcminRad / 2);
+        return oneArcminMm * 5 / acuity * viewportWidth / screenWidthMm * calibration;
+      }
+
+      function openTextDisplay() {
+        const text = displayText.value.trim();
+        const size = getCalculatedCssSize();
+        if (!text) {
+          displayStatus.textContent = "请先输入要显示的文字。";
+          displayStatus.className = "display-status warning";
+          displayText.focus();
+          return;
+        }
+        if (!Number.isFinite(size)) {
+          displayStatus.textContent = "请先把终端尺寸和观察距离填写完整。";
+          displayStatus.className = "display-status warning";
+          return;
+        }
+        const payload = { text, size: Math.max(12, size), acuity: number("acuity") };
+        try {
+          sessionStorage.setItem("visual-acuity-display-v1", JSON.stringify(payload));
+        } catch (error) {
+          // 新页面仍会通过 URL 兜底接收短文本。
+        }
+        const fallbackUrl = `visual-acuity-display.html?text=${encodeURIComponent(text)}&size=${encodeURIComponent(payload.size.toFixed(2))}`;
+        const displayWindow = window.open(fallbackUrl, "_blank");
+        if (!displayWindow) {
+          displayStatus.textContent = "浏览器拦截了新窗口，请允许此网页打开弹窗后再试。";
+          displayStatus.className = "display-status warning";
+          return;
+        }
+        displayStatus.textContent = `已按 ${payload.size.toFixed(1)} CSS px 打开展示页。`;
+        displayStatus.className = "display-status";
+      }
+
       function renderOptotype() {
         output.optotype.replaceChildren();
         ePattern.join("").split("").forEach((bit) => {
@@ -326,6 +386,7 @@
       els.preset.addEventListener("change", setPreset);
       ids.filter((id) => id !== "preset" && id !== "viewport-width").forEach((id) => els[id].addEventListener("input", calculate));
       document.getElementById("use-viewport").addEventListener("click", setViewportWidth);
+      document.getElementById("open-display").addEventListener("click", openTextDisplay);
       document.getElementById("reset").addEventListener("click", () => {
         els.preset.value = "iphone61";
         els.distance.value = "5";

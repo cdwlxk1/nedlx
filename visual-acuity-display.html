@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="description" content="按视力表计算尺寸显示自定义文字" />
+  <title>视标文字展示</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #fff; }
+    body { color: #111c22; font-family: Arial, "Microsoft YaHei", sans-serif; }
+    .display-page { min-height: 100vh; min-height: 100dvh; overflow-y: auto; overflow-x: hidden; }
+    .display-text {
+      width: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 4vh 5vw 12vh;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+    .error { min-height: 100vh; display: grid; place-items: center; padding: 24px; color: #a73737; text-align: center; font-size: 18px; }
+    .tools { position: fixed; right: 12px; bottom: 12px; z-index: 2; display: flex; gap: 8px; opacity: 0.18; transition: opacity .2s; }
+    .tools:hover, .tools:focus-within { opacity: 1; }
+    button { border: 1px solid #cbdeda; border-radius: 9px; padding: 8px 11px; color: #075e5c; background: rgba(255,255,255,.92); cursor: pointer; font: inherit; }
+    @media (max-width: 600px) { .display-text { padding-left: 4vw; padding-right: 4vw; } }
+  </style>
+</head>
+<body>
+  <main class="display-page">
+    <div id="display-text" class="display-text"></div>
+  </main>
+  <div class="tools" aria-label="展示控制">
+    <button id="fullscreen-button" type="button">全屏</button>
+    <button id="back-button" type="button">返回</button>
+  </div>
+  <script>
+    (() => {
+      const target = document.getElementById("display-text");
+      const params = new URLSearchParams(window.location.search);
+      let payload = null;
+      try { payload = JSON.parse(sessionStorage.getItem("visual-acuity-display-v1") || "null"); } catch (error) {}
+      const text = payload && typeof payload.text === "string" ? payload.text : (params.get("text") || "");
+      const size = payload && Number.isFinite(Number(payload.size)) ? Number(payload.size) : Number(params.get("size"));
+      if (!text || !Number.isFinite(size) || size <= 0) {
+        target.className = "error";
+        target.textContent = "没有收到有效的展示文字，请返回计算页重新生成。";
+        return;
+      }
+      target.textContent = text;
+      target.style.fontSize = `${size}px`;
+      document.title = `${text.slice(0, 20)} · 视标文字展示`;
+      document.getElementById("fullscreen-button").addEventListener("click", async () => {
+        try {
+          if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+          else await document.exitFullscreen();
+        } catch (error) {}
+      });
+      document.getElementById("back-button").addEventListener("click", () => window.history.back());
+    })();
+  </script>
+</body>
+</html>
